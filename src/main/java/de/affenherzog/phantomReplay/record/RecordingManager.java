@@ -2,6 +2,7 @@ package de.affenherzog.phantomReplay.record;
 
 import de.affenherzog.phantomReplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomReplay.replay.Frame;
+import de.affenherzog.phantomReplay.replay.KeyFrame;
 import de.affenherzog.phantomReplay.replay.Replay;
 import de.affenherzog.phantomReplay.replay.ReplayRepository;
 import org.bukkit.Bukkit;
@@ -49,9 +50,9 @@ public class RecordingManager {
         }
 
         Recording recording = recordingScheduler.removeRecording(uuid);
-        List<Frame> frames = recording.getFrames();
+        List<KeyFrame> keyFrames = recording.getKeyFrames();
 
-        Replay replay = new Replay(Replay.DEFAULT_ID, Replay.DEFAULT_NAME, uuid, frames);
+        Replay replay = new Replay(Replay.DEFAULT_ID, Replay.DEFAULT_NAME, uuid, keyFrames);
 
         replayRepository.saveReplay(replay).whenComplete((savedReplay, exception) -> {
 

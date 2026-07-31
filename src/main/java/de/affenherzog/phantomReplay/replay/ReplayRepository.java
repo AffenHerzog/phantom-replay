@@ -31,14 +31,14 @@ public class ReplayRepository {
 
                 stmt.setString(1, replay.name());
                 stmt.setString(2, replay.uuid().toString());
-                stmt.setString(3, ReplaySerializer.GSON.toJson(replay.frames()));
+                stmt.setString(3, ReplaySerializer.GSON.toJson(replay.keyFrames()));
 
                 stmt.executeUpdate();
 
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         int newId = generatedKeys.getInt(1);
-                        return new Replay(newId, replay.name(), replay.uuid(), replay.frames());
+                        return new Replay(newId, replay.name(), replay.uuid(), replay.keyFrames());
                     } else {
                         throw new SQLException("Datenbank hat keine ID generiert!");
                     }
@@ -63,7 +63,7 @@ public class ReplayRepository {
                 ResultSet rs = stmt.executeQuery();
                 List<Replay> replays = new ArrayList<>();
 
-                Type frameListType = new TypeToken<List<Frame>>() {}.getType();
+                Type frameListType = new TypeToken<List<KeyFrame>>() {}.getType();
 
                 while (rs.next()) {
                     int id = rs.getInt("id");
@@ -71,9 +71,9 @@ public class ReplayRepository {
                     UUID uuid = UUID.fromString(rs.getString("uuid"));
                     String json = rs.getString("data");
 
-                    List<Frame> frames = ReplaySerializer.GSON.fromJson(json, frameListType);
+                    List<KeyFrame> keyFrames = ReplaySerializer.GSON.fromJson(json, frameListType);
 
-                    Replay replay = new Replay(id, name, uuid, frames);
+                    Replay replay = new Replay(id, name, uuid, keyFrames);
                     replays.add(replay);
                 }
 
