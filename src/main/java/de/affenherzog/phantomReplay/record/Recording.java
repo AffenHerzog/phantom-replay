@@ -44,7 +44,7 @@ public class Recording {
     }
 
     private Position recordMovement() {
-        return Position.fromBukkitLocation(player.getLocation());
+        return Position.fromBukkitLocationRounded(player.getLocation());
     }
 
 
