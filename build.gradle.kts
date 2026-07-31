@@ -14,6 +14,10 @@ dependencies {
     compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
     compileOnly("com.zaxxer:HikariCP:7.1.0")
     compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
+    compileOnly("com.google.code.gson:gson:2.14.0")
+    compileOnly("com.google.code.gson:gson-extras:2.13.2-rc1")
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
 }
 
 java {

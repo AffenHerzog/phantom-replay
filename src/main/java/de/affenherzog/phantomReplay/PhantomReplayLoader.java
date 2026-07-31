@@ -22,6 +22,7 @@ public class PhantomReplayLoader implements PluginLoader {
 
         resolver.addDependency(new Dependency(new DefaultArtifact("com.zaxxer:HikariCP:7.1.0"), null));
         resolver.addDependency(new Dependency(new DefaultArtifact("org.mariadb.jdbc:mariadb-java-client:3.5.9"), null));
+        resolver.addDependency(new Dependency(new DefaultArtifact("com.google.code.gson:gson-extras:2.13.2-rc1"), null));
 
         classpathBuilder.addLibrary(resolver);
     }

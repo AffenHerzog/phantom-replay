@@ -2,6 +2,7 @@ package de.affenherzog.phantomReplay.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.Getter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class DatabaseManager {
     private final FileConfiguration config;
     private final Logger log;
 
+    @Getter
     private HikariDataSource dataSource;
 
     public DatabaseManager(Plugin plugin, Logger log) {

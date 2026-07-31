@@ -5,9 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,22 +22,31 @@ public class ReplayRepository {
         this.log = log;
     }
 
-    public CompletableFuture<Void> saveReplay(Replay replay) {
-        return CompletableFuture.runAsync(() -> {
+    public CompletableFuture<Replay> saveReplay(Replay replay) {
+        return CompletableFuture.supplyAsync(() -> {
             String sql = "INSERT INTO phantom_replays (name, uuid, data) VALUES (?, ?, ?)";
 
             try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                 PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
                 stmt.setString(1, replay.name());
                 stmt.setString(2, replay.uuid().toString());
-
-                String framesJson = ReplaySerializer.GSON.toJson(replay.frames());
-                stmt.setString(3, framesJson);
+                stmt.setString(3, ReplaySerializer.GSON.toJson(replay.frames()));
 
                 stmt.executeUpdate();
+
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int newId = generatedKeys.getInt(1);
+                        return new Replay(newId, replay.name(), replay.uuid(), replay.frames());
+                    } else {
+                        throw new SQLException("Datenbank hat keine ID generiert!");
+                    }
+                }
+
             } catch (Exception e) {
                 log.error("Fehler beim Speichern: {}", e.getMessage());
+                return replay;
             }
         });
     }

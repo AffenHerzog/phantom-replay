@@ -9,4 +9,8 @@ public record Position(double x, double y, double z, float yaw, float pitch) {
         return new Location(world, x, y, z, yaw, pitch);
     }
 
+    public static Position fromBukkitLocation(Location location) {
+        return new Position(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+    }
+
 }
