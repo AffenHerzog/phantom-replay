@@ -1,4 +1,6 @@
 package de.affenherzog.phantomReplay.replay;
 
-public record KeyFrame(int tick, Frame frame) {
+import com.google.gson.annotations.SerializedName;
+
+public record KeyFrame(@SerializedName("t") int tick, @SerializedName("f") Frame frame) {
 }

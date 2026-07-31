@@ -1,10 +1,11 @@
 package de.affenherzog.phantomReplay.replay;
 
+import com.google.gson.annotations.SerializedName;
 import de.affenherzog.phantomReplay.util.MathUtils;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-public record Position(double x, double y, double z, float yaw, float pitch) {
+public record Position(double x, double y, double z, @SerializedName("ry") float yaw, @SerializedName("rp") float pitch) {
 
     public Location toBukkitLocation(World world) {
         return new Location(world, x, y, z, yaw, pitch);
