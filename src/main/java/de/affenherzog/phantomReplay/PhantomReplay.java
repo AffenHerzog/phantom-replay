@@ -10,14 +10,18 @@ import de.affenherzog.phantomReplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomReplay.player.PlayerRepository;
 import de.affenherzog.phantomReplay.record.RecordingManager;
 import de.affenherzog.phantomReplay.replay.ReplayRepository;
+import de.affenherzog.phantomReplay.util.PluginSettings;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PhantomReplay extends JavaPlugin {
+
+    private final PluginSettings pluginSettings = new PluginSettings();;
 
     private ProtocolManager protocolManager;
     private DatabaseManager databaseManager;
@@ -33,6 +37,7 @@ public final class PhantomReplay extends JavaPlugin {
         log = getSLF4JLogger();
 
         saveDefaultConfig();
+        pluginSettings.load(getConfig());
 
         if (!setupDatabase()) {
             return;
@@ -44,7 +49,7 @@ public final class PhantomReplay extends JavaPlugin {
         playerRepository = new PlayerRepository(databaseManager.getDataSource(), log);
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
-        recordingManager = new RecordingManager(this, phantomPlayerManager, replayRepository, new HashMap<>());
+        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, new ConcurrentHashMap<>());
 
         registerListener();
         registerCommands();
@@ -96,6 +101,6 @@ public final class PhantomReplay extends JavaPlugin {
     private void registerListener() {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository), this);
-        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager), this);
+        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager), this);
     }
 }

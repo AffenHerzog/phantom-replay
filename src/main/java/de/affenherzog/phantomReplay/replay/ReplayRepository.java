@@ -86,5 +86,28 @@ public class ReplayRepository {
         });
     }
 
+    public CompletableFuture<Void> updateReplayName(int replayId, String newName) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "UPDATE phantom_replays SET name = ? WHERE id = ?";
+
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+                stmt.setString(1, newName);
+                stmt.setInt(2, replayId);
+
+                int rowsAffected = stmt.executeUpdate();
+
+                if (rowsAffected == 0) {
+                    log.warn("Konnte den Namen für Replay-ID {} nicht ändern, da es nicht existiert.", replayId);
+                }
+
+            } catch (Exception e) {
+                log.error("Fehler beim Aktualisieren des Replay-Namens (ID: {}): {}", replayId, e.getMessage());
+                throw new RuntimeException("Datenbankfehler beim Umbenennen", e);
+            }
+        });
+    }
+
 
 }

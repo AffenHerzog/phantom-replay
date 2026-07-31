@@ -13,19 +13,28 @@ import java.util.List;
 public class Recording {
 
     private final Player player;
+    private final int maxFrames;
+    private final Runnable onLimitReached;
 
     @Getter
     private final List<KeyFrame> keyFrames;
 
     private int frameCount = 0;
 
-    public Recording(Player player) {
+    public Recording(Player player, int maxFrames, Runnable onLimitReached) {
         this.player = player;
+        this.maxFrames = maxFrames;
+        this.onLimitReached = onLimitReached;
         this.keyFrames = new ArrayList<>();
     }
 
     public void recordFrame() {
         frameCount++;
+
+        if (frameCount >= maxFrames) {
+            onLimitReached.run();
+            return;
+        }
 
         Position position;
         List<ReplayAction> replayActions = new ArrayList<>();

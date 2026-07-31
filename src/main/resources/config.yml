@@ -4,3 +4,6 @@ database:
   name: "plugin_db"
   user: "admin"
   password: "password"
+
+record:
+  max-ticks: 200
