@@ -33,6 +33,10 @@ public class Recording {
         leftClickedThisTick = true;
     }
 
+    public Frame buildFrame() {
+        return new Frame(recordMovement(), recordActions());
+    }
+
     public void recordFrame() {
         frameCount++;
 
@@ -41,10 +45,7 @@ public class Recording {
             return;
         }
 
-        Position position = recordMovement();
-        List<ReplayAction> replayActions = recordActions();
-
-        Frame currentFrame = new Frame(position, replayActions);
+        Frame currentFrame = buildFrame();
 
         if (!keyFrames.isEmpty()) {
             KeyFrame lastKeyFrame = keyFrames.getLast();
@@ -53,7 +54,17 @@ public class Recording {
             }
         }
         keyFrames.add(new KeyFrame(frameCount, currentFrame));
-        leftClickedThisTick = false;
+    }
+
+    public void addLastFrame() {
+        if (keyFrames.isEmpty()) return;
+
+        if (keyFrames.getLast().tick() == frameCount) {
+            return;
+        }
+
+        Frame lastFrame = buildFrame();
+        keyFrames.add(new KeyFrame(++frameCount, lastFrame));
     }
 
     private Position recordMovement() {
@@ -66,6 +77,7 @@ public class Recording {
         addNonNullAction(actions, SprintAction.capture(player));
         addNonNullAction(actions, ShowItemAction.capture(player));
         addNonNullAction(actions, LeftClickAction.capture(leftClickedThisTick));
+        leftClickedThisTick = false;
         return actions;
     }
 

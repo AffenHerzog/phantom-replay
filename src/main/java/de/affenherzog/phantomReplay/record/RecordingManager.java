@@ -68,6 +68,7 @@ public class RecordingManager {
         }
 
         Recording recording = recordingScheduler.removeRecording(uuid);
+        recording.addLastFrame();
         List<KeyFrame> keyFrames = recording.getKeyFrames();
 
         Replay replay = new Replay(Replay.DEFAULT_ID, Replay.DEFAULT_NAME, uuid, keyFrames);
