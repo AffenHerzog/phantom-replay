@@ -1,7 +1,7 @@
 name: PhantomReplay
 version: '${version}'
 
-main: de.affenherzog.phantomReplay.PhantomReplay
+main: de.affenherzog.phantomreplay.PhantomReplay
 api-version: '1.21.11'
 load: POSTWORLD
 
@@ -11,4 +11,4 @@ dependencies:
       load: BEFORE
       required: true
 
-loader: de.affenherzog.phantomReplay.PhantomReplayLoader
+loader: de.affenherzog.phantomreplay.PhantomReplayLoader
