@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class PhantomReplay extends JavaPlugin {
 
-    private final PluginSettings pluginSettings = new PluginSettings();;
+    private final PluginSettings pluginSettings = new PluginSettings();
 
     private ProtocolManager protocolManager;
     private DatabaseManager databaseManager;
@@ -61,7 +61,7 @@ public final class PhantomReplay extends JavaPlugin {
     private void registerCommands() {
         RecordCommand recordCommand = new RecordCommand(recordingManager);
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
-                (event) -> event.registrar().register(recordCommand.build()));
+                event -> event.registrar().register(recordCommand.build()));
     }
 
     @Override

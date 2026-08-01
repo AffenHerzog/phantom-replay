@@ -44,7 +44,7 @@ public class PlayerJoinListener implements Listener {
                     }
 
                     Bukkit.getScheduler().runTask(plugin, () -> phantomPlayerManager.getPhantomPlayer(uuid)
-                            .ifPresent((player) -> player.addReplays(replays)
+                            .ifPresent(player -> player.addReplays(replays)
                             ));
                 });
     }
