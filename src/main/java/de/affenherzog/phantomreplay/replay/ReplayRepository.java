@@ -51,7 +51,7 @@ public class ReplayRepository {
 
     public CompletableFuture<List<Replay>> loadReplays(UUID playerId) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT íd, uuid, name, data, created_at FROM phantom_replays WHERE uuid = ?";
+            String sql = "SELECT id, uuid, name, data, created_at FROM phantom_replays WHERE uuid = ?";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
