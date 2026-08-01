@@ -75,22 +75,16 @@ public final class PhantomReplay extends JavaPlugin {
         this.databaseManager = new DatabaseManager(this, log);
 
         if (!this.databaseManager.connect()) {
-            log.error("=========================================");
             log.error("Konnte keine Verbindung zur Datenbank herstellen!");
             log.error("Bitte überprüfe die Zugangsdaten in der config.yml.");
             log.error("Das Plugin wird nun deaktiviert.");
-            log.error("=========================================");
-
             getServer().getPluginManager().disablePlugin(this);
             return false;
         }
 
         if (!this.databaseManager.initSchema()) {
-            log.error("=========================================");
             log.error("Konnte die Datenbank-Tabellen nicht erstellen!");
             log.error("Das Plugin wird nun deaktiviert.");
-            log.error("=========================================");
-
             getServer().getPluginManager().disablePlugin(this);
             return false;
         }

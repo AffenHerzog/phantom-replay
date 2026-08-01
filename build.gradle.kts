@@ -51,6 +51,9 @@ tasks {
         downloadPlugins {
             url("https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar")
         }
+
+        systemProperty("terminal.jline", "false")
+        systemProperty("terminal.ansi", "true")
     }
 
     processResources {
