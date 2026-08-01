@@ -29,12 +29,12 @@ public class RecordCommand {
     private int executeStart(CommandSourceStack source) {
         if (!(source.getSender() instanceof Player player)) {
             source.getSender().sendMessage("Nur Spieler können das tun!");
-            return Command.SINGLE_SUCCESS;
+            return 0;
         }
 
         if (!recordingManager.startRecording(player.getUniqueId())) {
             player.sendMessage(MUtil.parse("<red>Die Aufnahme läuft bereits!"));
-            return Command.SINGLE_SUCCESS;
+            return 0;
         }
         player.sendMessage(MUtil.parse("<green>Du hast eine neue Aufnahme gestartet!"));
 
@@ -44,12 +44,12 @@ public class RecordCommand {
     private int executeStop(CommandSourceStack source) {
         if (!(source.getSender() instanceof Player player)) {
             source.getSender().sendMessage("Nur Spieler können das tun!");
-            return Command.SINGLE_SUCCESS;
+            return 0;
         }
 
         if (!recordingManager.saveRecording(player.getUniqueId())) {
             player.sendMessage(MUtil.parse("<red>Du hast noch keine Aufnahme zu speichern!"));
-            return Command.SINGLE_SUCCESS;
+            return 0;
         }
 
         player.sendMessage(MUtil.parse("<green>Aufnahme gespeichert!"));
