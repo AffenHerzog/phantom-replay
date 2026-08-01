@@ -31,14 +31,14 @@ public class DatabaseManager {
 
     public boolean connect() {
         try {
-            HikariConfig config = getHikariConfig();
+            HikariConfig hikariConfig = getHikariConfig();
 
-            config.addDataSourceProperty("cachePrepStmts", "true");
-            config.addDataSourceProperty("prepStmtCacheSize", "250");
-            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-            config.addDataSourceProperty("useServerPrepStmts", "true");
+            hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+            hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+            hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+            hikariConfig.addDataSourceProperty("useServerPrepStmts", "true");
 
-            dataSource = new HikariDataSource(config);
+            dataSource = new HikariDataSource(hikariConfig);
             return true;
         } catch (Exception e) {
             log.error("Datenbank-Fehler: {}", e.getMessage());
@@ -105,8 +105,9 @@ public class DatabaseManager {
                     if (query.trim().isEmpty()) {
                         continue;
                     }
-                    stmt.execute(query);
+                    stmt.addBatch(query);
                 }
+                stmt.executeBatch();
             }
             return true;
 
