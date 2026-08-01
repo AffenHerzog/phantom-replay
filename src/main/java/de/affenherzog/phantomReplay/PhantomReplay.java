@@ -6,6 +6,7 @@ import de.affenherzog.phantomReplay.command.RecordCommand;
 import de.affenherzog.phantomReplay.database.DatabaseManager;
 import de.affenherzog.phantomReplay.listener.PlayerJoinListener;
 import de.affenherzog.phantomReplay.listener.PlayerQuitListener;
+import de.affenherzog.phantomReplay.listener.PlayerSwingArmListener;
 import de.affenherzog.phantomReplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomReplay.player.PlayerRepository;
 import de.affenherzog.phantomReplay.record.RecordingManager;
@@ -102,5 +103,6 @@ public final class PhantomReplay extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository), this);
         pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager), this);
+        pluginManager.registerEvents(new PlayerSwingArmListener(recordingManager), this);
     }
 }

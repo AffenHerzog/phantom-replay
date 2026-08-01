@@ -9,15 +9,34 @@ repositories {
     maven("https://repo.dmulloy2.net/repository/public/")
 }
 
+val paperVersion = "1.21.11-R0.1-SNAPSHOT"
+val protocolLibVersion = "5.4.0"
+val hikariVersion = "7.1.0"
+val mariaDbVersion = "3.5.9"
+val gsonVersion = "2.14.0"
+val gsonExtrasVersion = "2.13.2-rc1"
+val lombokVersion = "1.18.46"
+val junitVersion = "6.1.2"
+
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
-    compileOnly("com.zaxxer:HikariCP:7.1.0")
-    compileOnly("org.mariadb.jdbc:mariadb-java-client:3.5.9")
-    compileOnly("com.google.code.gson:gson:2.14.0")
-    compileOnly("com.google.code.gson:gson-extras:2.13.2-rc1")
-    compileOnly("org.projectlombok:lombok:1.18.46")
-    annotationProcessor("org.projectlombok:lombok:1.18.46")
+    compileOnly("io.papermc.paper:paper-api:${paperVersion}")
+    compileOnly("net.dmulloy2:ProtocolLib:${protocolLibVersion}")
+    compileOnly("com.google.code.gson:gson:${gsonVersion}")
+
+    testImplementation("io.papermc.paper:paper-api:${paperVersion}")
+    testImplementation("com.google.code.gson:gson:${gsonVersion}")
+
+    implementation("com.zaxxer:HikariCP:${hikariVersion}")
+    implementation("org.mariadb.jdbc:mariadb-java-client:${mariaDbVersion}")
+    implementation("com.google.code.gson:gson-extras:${gsonExtrasVersion}")
+
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    testCompileOnly("org.projectlombok:lombok:$lombokVersion")
+    testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -39,5 +58,9 @@ tasks {
         filesMatching("paper-plugin.yml") {
             expand(props)
         }
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }

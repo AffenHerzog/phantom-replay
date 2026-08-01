@@ -33,6 +33,17 @@ public class RecordingManager {
         startScheduler();
     }
 
+    public boolean isRecording(UUID uuid) {
+        return recordingScheduler.isRecording(uuid);
+    }
+
+    public void markLeftClick(UUID uuid) {
+        Recording recording = recordingScheduler.getRecording(uuid);
+        if (recording != null) {
+            recording.markLeftClick();
+        }
+    }
+
     public boolean startRecording(UUID uuid) {
 
         if (recordingScheduler.isRecording(uuid)) {

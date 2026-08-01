@@ -25,6 +25,10 @@ public class RecordingScheduler extends BukkitRunnable {
         return currentActiveRecordings.remove(uuid);
     }
 
+    public Recording getRecording(UUID uuid) {
+        return currentActiveRecordings.get(uuid);
+    }
+
     @Override
     public void run() {
         currentActiveRecordings.forEach((_, recording) -> recording.recordFrame());

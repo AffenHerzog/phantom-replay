@@ -1,10 +1,8 @@
 package de.affenherzog.phantomReplay.replay;
 
-import com.google.gson.reflect.TypeToken;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 
-import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +29,7 @@ public class ReplayRepository {
 
                 stmt.setString(1, replay.name());
                 stmt.setString(2, replay.uuid().toString());
-                stmt.setString(3, ReplaySerializer.GSON.toJson(replay.keyFrames()));
+                stmt.setString(3, ReplaySerializer.toJson(replay.keyFrames()));
 
                 stmt.executeUpdate();
 
@@ -63,15 +61,13 @@ public class ReplayRepository {
                 ResultSet rs = stmt.executeQuery();
                 List<Replay> replays = new ArrayList<>();
 
-                Type frameListType = new TypeToken<List<KeyFrame>>() {}.getType();
-
                 while (rs.next()) {
                     int id = rs.getInt("id");
                     String name = rs.getString("name");
                     UUID uuid = UUID.fromString(rs.getString("uuid"));
                     String json = rs.getString("data");
 
-                    List<KeyFrame> keyFrames = ReplaySerializer.GSON.fromJson(json, frameListType);
+                    List<KeyFrame> keyFrames = ReplaySerializer.fromJson(json);
 
                     Replay replay = new Replay(id, name, uuid, keyFrames);
                     replays.add(replay);

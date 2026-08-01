@@ -1,4 +1,12 @@
 package de.affenherzog.phantomReplay.replay.action;
 
-public record SprintAction(boolean isSprinting) implements ReplayAction {
+import com.google.gson.annotations.SerializedName;
+import org.bukkit.entity.Player;
+
+public record SprintAction(@SerializedName("sp") boolean isSprinting) implements ReplayAction {
+
+    public static SprintAction capture(Player player) {
+        return new SprintAction(player.isSprinting());
+    }
+
 }

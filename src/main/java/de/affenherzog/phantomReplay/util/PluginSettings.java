@@ -9,7 +9,7 @@ public class PluginSettings {
     private int maxTicksRecord;
 
     public void load(FileConfiguration config) {
-        maxTicksRecord = config.getInt("record.max-ticks", 1200);
+        maxTicksRecord = config.getInt("record.max-ticks");
     }
 
 }

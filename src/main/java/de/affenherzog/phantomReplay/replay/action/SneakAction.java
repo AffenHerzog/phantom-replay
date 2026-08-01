@@ -1,5 +1,12 @@
 package de.affenherzog.phantomReplay.replay.action;
 
-public record SneakAction(boolean isSneaking) implements ReplayAction {
+import com.google.gson.annotations.SerializedName;
+import org.bukkit.entity.Player;
+
+public record SneakAction(@SerializedName("s") boolean isSneaking) implements ReplayAction {
+
+    public static SneakAction capture(Player player) {
+        return new SneakAction(player.isSneaking());
+    }
 
 }
