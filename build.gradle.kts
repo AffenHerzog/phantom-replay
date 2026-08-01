@@ -22,21 +22,22 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:${paperVersion}")
     compileOnly("net.dmulloy2:ProtocolLib:${protocolLibVersion}")
     compileOnly("com.google.code.gson:gson:${gsonVersion}")
-
-    testImplementation("io.papermc.paper:paper-api:${paperVersion}")
-    testImplementation("com.google.code.gson:gson:${gsonVersion}")
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
 
     implementation("com.zaxxer:HikariCP:${hikariVersion}")
     implementation("org.mariadb.jdbc:mariadb-java-client:${mariaDbVersion}")
     implementation("com.google.code.gson:gson-extras:${gsonExtrasVersion}")
 
-    compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
+    testImplementation("io.papermc.paper:paper-api:${paperVersion}")
+    testImplementation("com.google.code.gson:gson:${gsonVersion}")
+    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
+
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     testCompileOnly("org.projectlombok:lombok:$lombokVersion")
     testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
-
-    testImplementation("org.junit.jupiter:junit-jupiter:$junitVersion")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -51,6 +52,9 @@ tasks {
         downloadPlugins {
             url("https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar")
         }
+
+        systemProperty("terminal.jline", "false")
+        systemProperty("terminal.ansi", "true")
     }
 
     processResources {
