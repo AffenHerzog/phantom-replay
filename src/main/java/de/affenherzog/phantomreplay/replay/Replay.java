@@ -8,10 +8,14 @@ import java.util.UUID;
 public record Replay(int id, String name, UUID uuid, List<KeyFrame> keyFrames) {
 
     public static final int DEFAULT_ID = -1;
-    public static final String DEFAULT_NAME = "Neues Replay";
+    public static final String DEFAULT_NAME = "Neues-Replay";
 
     public Component getComponentName() {
         return Component.text(name);
+    }
+
+    public String getUniqueName() {
+        return id + "-" + name;
     }
 
     public Replay withName(String newName) {

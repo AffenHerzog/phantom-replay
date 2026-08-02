@@ -15,4 +15,8 @@ public class MUtil {
         return MM.deserialize(text);
     }
 
+    public static String stripe(String text) {
+        return MM.stripTags(text);
+    }
+
 }

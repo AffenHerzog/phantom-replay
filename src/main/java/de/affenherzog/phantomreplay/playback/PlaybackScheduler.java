@@ -1,24 +1,23 @@
 package de.affenherzog.phantomreplay.playback;
 
-
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Map;
 
 public class PlaybackScheduler extends BukkitRunnable {
 
-    private final Map<Integer, PlaybackSession> playbackSessions;
+    private final Map<Integer, PlaybackSessionRunner> playbackSessions;
 
-    public PlaybackScheduler(Map<Integer, PlaybackSession> playbackSessions) {
+    public PlaybackScheduler(Map<Integer, PlaybackSessionRunner> playbackSessions) {
         this.playbackSessions = playbackSessions;
     }
 
-    public void addPlaybackSession(PlaybackSession playbackSession) {
-        int id = playbackSession.getReplay().id();
-        playbackSessions.put(id, playbackSession);
+    public void addPlaybackSession(PlaybackSessionRunner playbackSessionRunner) {
+        int id = playbackSessionRunner.getModel().getReplay().id();
+        playbackSessions.put(id, playbackSessionRunner);
     }
 
-    public PlaybackSession removePlaybackSession(int id) {
+    public PlaybackSessionRunner removePlaybackSession(int id) {
         return playbackSessions.remove(id);
     }
 
@@ -26,9 +25,13 @@ public class PlaybackScheduler extends BukkitRunnable {
         return playbackSessions.containsKey(id);
     }
 
+    public PlaybackSessionRunner getPlaybackSession(int id) {
+        return playbackSessions.get(id);
+    }
+
     @Override
     public void run() {
-        playbackSessions.forEach((_, playbackSession) -> playbackSession.tick());
+        playbackSessions.forEach((_, playbackSessionRunner) -> playbackSessionRunner.tick());
     }
 
 }
