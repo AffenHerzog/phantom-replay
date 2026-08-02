@@ -14,6 +14,7 @@ import de.affenherzog.phantomreplay.record.RecordingManager;
 import de.affenherzog.phantomreplay.replay.ReplayRepository;
 import de.affenherzog.phantomreplay.util.PluginSettings;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
@@ -37,10 +38,12 @@ public final class PhantomReplay extends JavaPlugin {
     private PhantomPlayerManager phantomPlayerManager;
 
     private Logger log;
+    private ComponentLogger componentLogger;
 
     @Override
     public void onEnable() {
         log = getSLF4JLogger();
+        componentLogger = getComponentLogger();
 
         saveDefaultConfig();
         pluginSettings.load(getConfig());
@@ -51,8 +54,8 @@ public final class PhantomReplay extends JavaPlugin {
 
         protocolManager = ProtocolLibrary.getProtocolManager();
 
-        replayRepository = new ReplayRepository(databaseManager.getDataSource(), log);
-        playerRepository = new PlayerRepository(databaseManager.getDataSource(), log);
+        replayRepository = new ReplayRepository(databaseManager.getDataSource(), componentLogger);
+        playerRepository = new PlayerRepository(databaseManager.getDataSource(), componentLogger);
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
         recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, new ConcurrentHashMap<>());
