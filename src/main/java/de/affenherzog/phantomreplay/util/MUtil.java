@@ -5,7 +5,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 
 public class MUtil {
 
-    private static final MiniMessage MM = MiniMessage.miniMessage();
+    public static final MiniMessage MM = MiniMessage.miniMessage();
 
     private MUtil() {
     }

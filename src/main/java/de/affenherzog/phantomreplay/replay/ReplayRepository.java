@@ -102,5 +102,27 @@ public class ReplayRepository extends AbstractRepository {
         });
     }
 
+    public CompletableFuture<Void> deleteReplay(int replayId) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "DELETE FROM replay WHERE id = ?";
+
+            try (Connection conn = getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+                stmt.setInt(1, replayId);
+
+                int rowsAffected = stmt.executeUpdate();
+
+                if (rowsAffected == 0) {
+                    logWarn("Konnte Replay-ID {} nicht löschen, da es nicht existiert.", replayId);
+                }
+
+            } catch (Exception e) {
+                logError("Fehler beim Löschen des Replays (ID: {}): {}", replayId, e.getMessage());
+                throw new RuntimeException("Datenbankfehler beim Löschen", e);
+            }
+        });
+    }
+
 
 }
