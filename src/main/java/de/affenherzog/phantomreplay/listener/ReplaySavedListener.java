@@ -22,7 +22,7 @@ public class ReplaySavedListener implements Listener {
 
     @EventHandler
     public void onReplaySaved(ReplaySavedEvent event) {
-        Replay replay = event.getReplay();
+        final Replay replay = event.getReplay();
 
         PlaybackSessionModel defaultSession = new PlaybackSessionModel(
                 -1,
@@ -32,7 +32,7 @@ public class ReplaySavedListener implements Listener {
         );
 
         playbackRepository.savePlaybackSession(defaultSession).thenAccept(savedModel ->
-                Bukkit.getScheduler().runTask(plugin, () -> playbackManager.addSession(new PlaybackSessionRunner(savedModel))));
+                Bukkit.getScheduler().runTask(plugin, () -> playbackManager.addSession(new PlaybackSessionRunner(savedModel, event.getPlayerUuid()))));
     }
 
 }

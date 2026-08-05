@@ -29,14 +29,14 @@ public class PlaybackRepository extends AbstractRepository {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setBoolean(1, model.isActive());
-                stmt.setString(2, model.getVisibilityScope().name());
-                stmt.setInt(3, model.getId());
+                stmt.setBoolean(1, model.active());
+                stmt.setString(2, model.visibilityScope().name());
+                stmt.setInt(3, model.id());
 
                 stmt.executeUpdate();
 
             } catch (SQLException e) {
-                logError("Fehler beim Aktualisieren der Playback-Sitzung {}", model.getId(), e);
+                logError("Fehler beim Aktualisieren der Playback-Sitzung {}", model.id(), e);
             }
         });
     }
@@ -92,9 +92,9 @@ public class PlaybackRepository extends AbstractRepository {
             try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-                stmt.setInt(1, model.getReplay().id());
-                stmt.setBoolean(2, model.isActive());
-                stmt.setString(3, model.getVisibilityScope().name());
+                stmt.setInt(1, model.replay().id());
+                stmt.setBoolean(2, model.active());
+                stmt.setString(3, model.visibilityScope().name());
 
                 stmt.executeUpdate();
 
@@ -102,9 +102,9 @@ public class PlaybackRepository extends AbstractRepository {
                     if (rs.next()) {
                         return new PlaybackSessionModel(
                                 rs.getInt(1),
-                                model.getReplay(),
-                                model.isActive(),
-                                model.getVisibilityScope()
+                                model.replay(),
+                                model.active(),
+                                model.visibilityScope()
                         );
                     } else {
                         throw new SQLException("Datenbank hat keine ID generiert!");

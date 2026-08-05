@@ -4,6 +4,7 @@ import de.affenherzog.phantomreplay.util.MUtil;
 import lombok.Getter;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,29 +32,34 @@ public class PlaybackManager {
     }
 
     public void addSession(PlaybackSessionRunner sessionToAdd) {
-        sessions.put(sessionToAdd.getModel().getId(), sessionToAdd);
+        sessions.put(sessionToAdd.getModel().id(), sessionToAdd);
 
-        if (sessionToAdd.getModel().isActive()) {
+        if (sessionToAdd.getModel().active()) {
             play(sessionToAdd);
         }
     }
 
     public void removeAll(UUID ownerUuid) {
-        sessions.values().removeIf(session -> {
-            boolean belongsToPlayer = session.getModel().getReplay().uuid().equals(ownerUuid);
-            if (belongsToPlayer) {
-                stop(session.getModel().getId());
+        List<Integer> idsToRemove = new ArrayList<>();
+
+        for (PlaybackSessionRunner session : sessions.values()) {
+            if (session.getModel().replay().uuid().equals(ownerUuid)) {
+                idsToRemove.add(session.getModel().id());
+                session.getAnimator().despawnAll();
+                stop(session.getModel().id());
             }
-            return belongsToPlayer;
-        });
+        }
+
+        for (Integer id : idsToRemove) {
+            sessions.remove(id);
+        }
     }
 
     public void updateActiveSession(int id, boolean active) {
-        // Statt Schleife: Direkter Zugriff!
         PlaybackSessionRunner runner = sessions.get(id);
 
         if (runner != null) {
-            runner.getModel().setActive(active);
+            runner.modifyActive(active);
 
             if (active) {
                 play(runner);
@@ -69,7 +75,7 @@ public class PlaybackManager {
         PlaybackSessionRunner runner = sessions.get(id);
 
         if (runner != null) {
-            runner.getModel().setVisibilityScope(scope);
+            runner.modifyVisibility(scope);
             updatePlaybackModelInDatabase(runner.getModel());
         }
     }
@@ -96,7 +102,7 @@ public class PlaybackManager {
 
     public List<String> getUniqueSessionNames() {
         return sessions.values().stream()
-                .map(it -> MUtil.stripe(it.getModel().getReplay().getUniqueName()))
+                .map(it -> MUtil.stripe(it.getModel().replay().getUniqueName()))
                 .toList();
     }
 }

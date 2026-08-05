@@ -59,7 +59,7 @@ public class PlayerJoinListener implements Listener {
                         Bukkit.getScheduler().runTask(plugin, () ->
                                 phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(_ -> {
                                     List<PlaybackSessionRunner> runners = playbackSessionModels.stream()
-                                            .map(PlaybackSessionRunner::new)
+                                            .map(it -> new PlaybackSessionRunner(it, uuid))
                                             .toList();
 
                                     playbackManager.addSessions(runners);

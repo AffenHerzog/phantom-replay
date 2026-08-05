@@ -14,7 +14,7 @@ class ReplaySerializerTest {
 
     @Test
     void testRoundTripSerialization() {
-        Position pos = new Position(10.5, 64.0, -100.2, 90f, 0f);
+        Position pos = new Position(10.5, 64.0, -100.2, 90f, 0f, "");
         List<ReplayAction> actions = List.of(
                 new LeftClickAction(true),
                 new ShowItemAction("STONE_SWORD"),

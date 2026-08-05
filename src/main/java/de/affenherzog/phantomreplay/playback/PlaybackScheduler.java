@@ -13,7 +13,7 @@ public class PlaybackScheduler extends BukkitRunnable {
     }
 
     public void addPlaybackSession(PlaybackSessionRunner playbackSessionRunner) {
-        int id = playbackSessionRunner.getModel().getReplay().id();
+        int id = playbackSessionRunner.getModel().replay().id();
         playbackSessions.put(id, playbackSessionRunner);
     }
 

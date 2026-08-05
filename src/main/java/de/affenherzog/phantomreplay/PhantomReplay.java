@@ -1,9 +1,8 @@
 package de.affenherzog.phantomreplay;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
+import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
 import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
 import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
@@ -29,7 +28,6 @@ public final class PhantomReplay extends JavaPlugin {
 
     private final PluginSettings pluginSettings = new PluginSettings();
 
-    private ProtocolManager protocolManager;
     private DatabaseManager databaseManager;
 
     private ReplayRepository replayRepository;
@@ -56,8 +54,6 @@ public final class PhantomReplay extends JavaPlugin {
             return;
         }
 
-        protocolManager = ProtocolLibrary.getProtocolManager();
-
         replayRepository = new ReplayRepository(databaseManager.getDataSource(), componentLogger);
         playerRepository = new PlayerRepository(databaseManager.getDataSource(), componentLogger);
 
@@ -75,7 +71,8 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerCommands() {
         List<PhantomCommand> commands = List.of(
-                new RecordCommand(recordingManager)
+                new RecordCommand(recordingManager),
+                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
         );
 
         commands.forEach(it ->

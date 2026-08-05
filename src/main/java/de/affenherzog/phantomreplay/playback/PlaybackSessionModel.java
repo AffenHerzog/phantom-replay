@@ -1,18 +1,20 @@
 package de.affenherzog.phantomreplay.playback;
 
 import de.affenherzog.phantomreplay.replay.Replay;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 
-@AllArgsConstructor
-@Getter
-@Setter
-public class PlaybackSessionModel {
-    private final int id;
-    private Replay replay;
-    private boolean active;
-    private VisibilityScope visibilityScope;
+public record PlaybackSessionModel(int id, Replay replay, boolean active, VisibilityScope visibilityScope) {
+
+    public PlaybackSessionModel withActive(boolean active) {
+        return new PlaybackSessionModel(id, replay, active, visibilityScope);
+    }
+
+    public PlaybackSessionModel withVisibilityScope(VisibilityScope scope) {
+        return new PlaybackSessionModel(id, replay, active, scope);
+    }
+
+    public PlaybackSessionModel withReplay(Replay replay) {
+        return new PlaybackSessionModel(id, replay, active, visibilityScope);
+    }
 
     public static boolean ACTIVE_DEFAULT = true;
     public static VisibilityScope VISIBILITY_SCOPE_DEFAULT = VisibilityScope.GLOBAL;

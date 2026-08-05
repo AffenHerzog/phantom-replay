@@ -15,7 +15,8 @@ public record Replay(int id, String name, UUID uuid, List<KeyFrame> keyFrames) {
     }
 
     public String getUniqueName() {
-        return id + "-" + name;
+        if (name.equals(DEFAULT_NAME)) return id + "-" + name;
+        return name;
     }
 
     public Replay withName(String newName) {
