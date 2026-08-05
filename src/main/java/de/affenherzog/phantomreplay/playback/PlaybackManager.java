@@ -1,5 +1,6 @@
 package de.affenherzog.phantomreplay.playback;
 
+import de.affenherzog.phantomreplay.replay.Replay;
 import de.affenherzog.phantomreplay.util.MUtil;
 import lombok.Getter;
 import org.bukkit.plugin.Plugin;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class PlaybackManager {
@@ -39,6 +41,18 @@ public class PlaybackManager {
         }
     }
 
+    private PlaybackSessionRunner findSessionByReplayId(int replayId) {
+        return sessions.values().stream()
+                .filter(session -> session.getModel().replay().id() == replayId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Optional<PlaybackSessionModel> getSessionModelByReplayId(int replayId) {
+        return Optional.ofNullable(findSessionByReplayId(replayId))
+                .map(PlaybackSessionRunner::getModel);
+    }
+
     public void removeAll(UUID ownerUuid) {
         List<Integer> idsToRemove = new ArrayList<>();
 
@@ -46,7 +60,7 @@ public class PlaybackManager {
             if (session.getModel().replay().uuid().equals(ownerUuid)) {
                 idsToRemove.add(session.getModel().id());
                 session.getAnimator().despawnAll();
-                stop(session.getModel().id());
+                stop(session.getModel().replay().id());
             }
         }
 
@@ -55,29 +69,41 @@ public class PlaybackManager {
         }
     }
 
-    public void updateActiveSession(int id, boolean active) {
-        PlaybackSessionRunner runner = sessions.get(id);
-
-        if (runner != null) {
-            runner.modifyActive(active);
-
-            if (active) {
-                play(runner);
-            } else {
-                stop(id);
-            }
-
-            updatePlaybackModelInDatabase(runner.getModel());
-        }
+    public void loadReplayIntoSession(int id, Replay replay) {
+        PlaybackSessionRunner runner = findSessionByReplayId(id);
+        if (runner == null) return;
+        runner.setModel(runner.getModel().withReplay(replay));
     }
 
-    public void updateVisibilitySession(int id, VisibilityScope scope) {
-        PlaybackSessionRunner runner = sessions.get(id);
+    public boolean updateActiveSession(int replayId, boolean active) {
+        PlaybackSessionRunner runner = findSessionByReplayId(replayId);
 
-        if (runner != null) {
-            runner.modifyVisibility(scope);
-            updatePlaybackModelInDatabase(runner.getModel());
+        if (runner == null) return false;
+        if (active == runner.getModel().active()) return false;
+
+        runner.modifyActive(active);
+
+        if (active) {
+            play(runner);
+        } else {
+            stop(replayId);
         }
+
+        updatePlaybackModelInDatabase(runner.getModel());
+
+        return true;
+    }
+
+    public boolean updateVisibilitySession(int replayId, VisibilityScope scope) {
+        PlaybackSessionRunner runner = findSessionByReplayId(replayId);
+
+        if (runner == null) return false;
+        if (scope == runner.getModel().visibilityScope()) return false;
+
+        runner.modifyVisibility(scope);
+        updatePlaybackModelInDatabase(runner.getModel());
+
+        return true;
     }
 
     public void play(PlaybackSessionRunner playbackSessionRunner) {
@@ -86,6 +112,15 @@ public class PlaybackManager {
 
     public void stop(int id) {
         playbackScheduler.removePlaybackSession(id);
+    }
+
+    public void removeSessionByReplayId(int replayId) {
+        PlaybackSessionRunner runner = findSessionByReplayId(replayId);
+        if (runner == null) return;
+
+        runner.getAnimator().despawnAll();
+        stop(replayId);
+        sessions.remove(runner.getModel().id());
     }
 
     public void startScheduler() {
