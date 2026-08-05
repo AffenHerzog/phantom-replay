@@ -8,7 +8,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
 
-public class RecordCommand {
+public class RecordCommand implements PhantomCommand {
 
     private final RecordingManager recordingManager;
 
@@ -17,8 +17,8 @@ public class RecordCommand {
     }
 
     public LiteralCommandNode<CommandSourceStack> build() {
-        return Commands.literal("replay")
-                .requires(source -> source.getSender().hasPermission("phantomreplay.replay"))
+        return Commands.literal("record")
+                .requires(source -> source.getSender().hasPermission("phantomreplay.record"))
                 .then(Commands.literal("start")
                         .executes(ctx -> this.executeStart(ctx.getSource())))
                 .then(Commands.literal("stop")

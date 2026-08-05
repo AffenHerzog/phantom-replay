@@ -1,7 +1,8 @@
 package de.affenherzog.phantomreplay.replay;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.slf4j.Logger;
+import de.affenherzog.phantomreplay.database.AbstractRepository;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,21 +11,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class ReplayRepository {
+public class ReplayRepository extends AbstractRepository {
 
-    private final HikariDataSource dataSource;
-    private final Logger log;
-
-    public ReplayRepository(HikariDataSource dataSource, Logger log) {
-        this.dataSource = dataSource;
-        this.log = log;
+    public ReplayRepository(HikariDataSource dataSource, ComponentLogger componentLogger) {
+        super(dataSource, componentLogger);
     }
 
     public CompletableFuture<Replay> saveReplay(Replay replay) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "INSERT INTO phantom_replays (name, uuid, data) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO replay (name, uuid, data) VALUES (?, ?, ?)";
 
-            try (Connection conn = dataSource.getConnection();
+            try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
                 stmt.setString(1, replay.name());
@@ -43,7 +40,7 @@ public class ReplayRepository {
                 }
 
             } catch (Exception e) {
-                log.error("Fehler beim Speichern: {}", e.getMessage());
+                logError("Fehler beim Speichern: {}", e.getMessage());
                 return replay;
             }
         });
@@ -51,9 +48,9 @@ public class ReplayRepository {
 
     public CompletableFuture<List<Replay>> loadReplays(UUID playerId) {
         return CompletableFuture.supplyAsync(() -> {
-            String sql = "SELECT id, uuid, name, data, created_at FROM phantom_replays WHERE uuid = ?";
+            String sql = "SELECT id, uuid, name, data, created_at FROM replay WHERE uuid = ?";
 
-            try (Connection conn = dataSource.getConnection();
+            try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
                 stmt.setString(1, playerId.toString());
@@ -76,7 +73,7 @@ public class ReplayRepository {
                 return replays;
 
             } catch (Exception e) {
-                log.error("Fehler beim Laden der Replay-Daten: {}", e.getMessage());
+                logError("Fehler beim Laden der Replay-Daten: {}", e.getMessage());
                 return Collections.emptyList();
             }
         });
@@ -84,9 +81,9 @@ public class ReplayRepository {
 
     public CompletableFuture<Void> updateReplayName(int replayId, String newName) {
         return CompletableFuture.runAsync(() -> {
-            String sql = "UPDATE phantom_replays SET name = ? WHERE id = ?";
+            String sql = "UPDATE replay SET name = ? WHERE id = ?";
 
-            try (Connection conn = dataSource.getConnection();
+            try (Connection conn = getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
                 stmt.setString(1, newName);
@@ -95,11 +92,11 @@ public class ReplayRepository {
                 int rowsAffected = stmt.executeUpdate();
 
                 if (rowsAffected == 0) {
-                    log.warn("Konnte den Namen für Replay-ID {} nicht ändern, da es nicht existiert.", replayId);
+                    logWarn("Konnte den Namen für Replay-ID {} nicht ändern, da es nicht existiert.", replayId);
                 }
 
             } catch (Exception e) {
-                log.error("Fehler beim Aktualisieren des Replay-Namens (ID: {}): {}", replayId, e.getMessage());
+                logError("Fehler beim Aktualisieren des Replay-Namens (ID: {}): {}", replayId, e.getMessage());
                 throw new RuntimeException("Datenbankfehler beim Umbenennen", e);
             }
         });

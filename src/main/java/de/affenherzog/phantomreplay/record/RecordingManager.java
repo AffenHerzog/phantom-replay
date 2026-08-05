@@ -1,5 +1,6 @@
 package de.affenherzog.phantomreplay.record;
 
+import de.affenherzog.phantomreplay.events.ReplaySavedEvent;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.replay.KeyFrame;
 import de.affenherzog.phantomreplay.replay.Replay;
@@ -11,9 +12,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RecordingManager {
 
@@ -24,12 +25,12 @@ public class RecordingManager {
 
     private final RecordingScheduler recordingScheduler;
 
-    public RecordingManager(Plugin plugin, PluginSettings pluginSettings, PhantomPlayerManager phantomPlayerManager, ReplayRepository replayRepository, Map<UUID, Recording> currentActiveRecordings) {
+    public RecordingManager(Plugin plugin, PluginSettings pluginSettings, PhantomPlayerManager phantomPlayerManager, ReplayRepository replayRepository) {
         this.plugin = plugin;
         this.pluginSettings = pluginSettings;
         this.phantomPlayerManager = phantomPlayerManager;
         this.replayRepository = replayRepository;
-        this.recordingScheduler = new RecordingScheduler(currentActiveRecordings);
+        this.recordingScheduler = new RecordingScheduler(new ConcurrentHashMap<>());
         startScheduler();
     }
 
@@ -80,8 +81,12 @@ public class RecordingManager {
                 return;
             }
 
-            Bukkit.getScheduler().runTask(plugin, () -> phantomPlayerManager.getPhantomPlayer(uuid).
-                    ifPresent(currentPlayer -> currentPlayer.addReplay(savedReplay)));
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                phantomPlayerManager.getPhantomPlayer(uuid).
+                        ifPresent(currentPlayer -> currentPlayer.addReplay(savedReplay));
+                Bukkit.getPluginManager().callEvent(new ReplaySavedEvent(uuid, savedReplay));
+            });
+
         });
         return true;
     }

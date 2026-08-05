@@ -1,14 +1,23 @@
-CREATE TABLE IF NOT EXISTS phantom_players
+CREATE TABLE IF NOT EXISTS player
 (
-    uuid      VARCHAR(36) PRIMARY KEY
+    uuid VARCHAR(36) PRIMARY KEY
 );
 
-CREATE TABLE IF NOT EXISTS phantom_replays
+CREATE TABLE IF NOT EXISTS replay
 (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    uuid VARCHAR(36) NOT NULL,
-    name        VARCHAR(255) NOT NULL,
-    data LONGBLOB    NOT NULL,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (uuid) REFERENCES phantom_players (uuid) ON DELETE CASCADE
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    uuid       VARCHAR(36)  NOT NULL,
+    name       VARCHAR(255) NOT NULL,
+    data       LONGBLOB     NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uuid) REFERENCES player (uuid) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS playback_session
+(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    replay_id INT NOT NULL,
+    active BOOLEAN DEFAULT FALSE,
+    scope ENUM('GLOBAL', 'PRIVAT') DEFAULT 'GLOBAL',
+    FOREIGN KEY (replay_id) REFERENCES replay (id) ON DELETE CASCADE
+)

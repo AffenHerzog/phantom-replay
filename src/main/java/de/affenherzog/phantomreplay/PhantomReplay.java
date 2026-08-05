@@ -1,41 +1,51 @@
 package de.affenherzog.phantomreplay;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
+import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
+import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
 import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
 import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
 import de.affenherzog.phantomreplay.listener.PlayerSwingArmListener;
+import de.affenherzog.phantomreplay.listener.ReplaySavedListener;
+import de.affenherzog.phantomreplay.playback.PlaybackManager;
+import de.affenherzog.phantomreplay.playback.PlaybackRepository;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
 import de.affenherzog.phantomreplay.replay.ReplayRepository;
 import de.affenherzog.phantomreplay.util.PluginSettings;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 public final class PhantomReplay extends JavaPlugin {
 
     private final PluginSettings pluginSettings = new PluginSettings();
 
-    private ProtocolManager protocolManager;
     private DatabaseManager databaseManager;
+
     private ReplayRepository replayRepository;
-    private PlayerRepository playerRepository;
     private RecordingManager recordingManager;
+
+    private PlaybackManager playbackManager;
+    private PlaybackRepository playbackRepository;
+
+    private PlayerRepository playerRepository;
     private PhantomPlayerManager phantomPlayerManager;
 
     private Logger log;
+    private ComponentLogger componentLogger;
 
     @Override
     public void onEnable() {
         log = getSLF4JLogger();
+        componentLogger = getComponentLogger();
 
         saveDefaultConfig();
         pluginSettings.load(getConfig());
@@ -44,13 +54,14 @@ public final class PhantomReplay extends JavaPlugin {
             return;
         }
 
-        protocolManager = ProtocolLibrary.getProtocolManager();
-
-        replayRepository = new ReplayRepository(databaseManager.getDataSource(), log);
-        playerRepository = new PlayerRepository(databaseManager.getDataSource(), log);
+        replayRepository = new ReplayRepository(databaseManager.getDataSource(), componentLogger);
+        playerRepository = new PlayerRepository(databaseManager.getDataSource(), componentLogger);
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
-        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, new ConcurrentHashMap<>());
+        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository);
+
+        playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
+        playbackManager = new PlaybackManager(this, playbackRepository);
 
         registerListener();
         registerCommands();
@@ -59,9 +70,14 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerCommands() {
-        RecordCommand recordCommand = new RecordCommand(recordingManager);
-        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
-                event -> event.registrar().register(recordCommand.build()));
+        List<PhantomCommand> commands = List.of(
+                new RecordCommand(recordingManager),
+                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
+        );
+
+        commands.forEach(it ->
+                this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
+                        event -> event.registrar().register(it.build())));
     }
 
     @Override
@@ -95,8 +111,9 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerListener() {
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository), this);
-        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager), this);
+        pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository, playbackRepository, playbackManager), this);
+        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager, playbackManager), this);
         pluginManager.registerEvents(new PlayerSwingArmListener(recordingManager), this);
+        pluginManager.registerEvents(new ReplaySavedListener(this, playbackRepository, playbackManager), this);
     }
 }
