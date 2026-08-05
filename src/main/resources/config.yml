@@ -6,4 +6,4 @@ database:
   password: "password"
 
 record:
-  max-ticks: 400
+  max-ticks: 1200
