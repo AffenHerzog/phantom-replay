@@ -4,15 +4,17 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.*;
 import de.affenherzog.phantomreplay.replay.Position;
+import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class PacketFactory {
@@ -107,6 +109,54 @@ public class PacketFactory {
         headPacket.getBytes().write(0, headYaw);
 
         return headPacket;
+    }
+
+    public PacketContainer buildMetadataPacket(int npcEntityId, boolean sneaking, boolean sprinting) {
+        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_METADATA);
+        packet.getIntegers().write(0, npcEntityId);
+
+        List<WrappedDataValue> dataValues = new ArrayList<>();
+
+        byte flags = 0;
+        if (sneaking) flags |= 0x02;
+        if (sprinting) flags |= 0x08;
+
+        WrappedDataWatcher.Serializer byteSerializer = WrappedDataWatcher.Registry.get((Type) Byte.class);
+        dataValues.add(new WrappedDataValue(0, byteSerializer, flags));
+
+        Object nmsPose = (sneaking ? EnumWrappers.EntityPose.CROUCHING : EnumWrappers.EntityPose.STANDING).toNms();
+        WrappedDataWatcher.Serializer poseSerializer = WrappedDataWatcher.Registry.get((Type) nmsPose.getClass());
+        dataValues.add(new WrappedDataValue(6, poseSerializer, nmsPose));
+        packet.getDataValueCollectionModifier().write(0, dataValues);
+
+        return packet;
+    }
+
+    public PacketContainer buildSwingArmPacket(int npcEntityId, Player dummyPlayer) {
+
+        PacketContainer packetContainer = protocolManager.createPacketConstructor(
+                PacketType.Play.Server.ANIMATION,
+                dummyPlayer,
+                0
+        ).createPacket(dummyPlayer, 0);
+
+        packetContainer.getIntegers().write(0, npcEntityId);
+        packetContainer.getIntegers().write(1, 0);
+
+        return packetContainer;
+    }
+
+    public PacketContainer buildItemPacket(int npcEntityId, Material material) {
+        PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
+        packet.getIntegers().write(0, npcEntityId);
+
+        List<Pair<EnumWrappers.ItemSlot, ItemStack>> pairs = new ArrayList<>();
+        ItemStack itemStack = new ItemStack(material != null ? material : Material.AIR);
+
+        pairs.add(new Pair<>(EnumWrappers.ItemSlot.MAINHAND, itemStack));
+        packet.getSlotStackPairLists().writeSafely(0, pairs);
+
+        return packet;
     }
 
     public PacketContainer buildDestroyPacket(int npcEntityId) {

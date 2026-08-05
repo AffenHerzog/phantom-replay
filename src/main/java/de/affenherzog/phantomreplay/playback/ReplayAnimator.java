@@ -9,6 +9,7 @@ import de.affenherzog.phantomreplay.replay.action.*;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -23,6 +24,8 @@ public class ReplayAnimator {
     private final PacketFactory packetFactory = new PacketFactory();
 
     private Position lastPosition;
+    private boolean isSneaking = false;
+    private boolean isSprinting = false;
 
     private final Set<UUID> activeViewers = new HashSet<>();
 
@@ -58,13 +61,25 @@ public class ReplayAnimator {
         sendMovement(frame.position(), lastPosition);
 
         if (frame.replayActions() != null) {
+            boolean metadataChanged = false;
+
             for (ReplayAction action : frame.replayActions()) {
                 switch (action) {
-                    case LeftClickAction l -> sendArmAnimation();
-                    case ShowItemAction s -> sendEquipment(s);
-                    case SneakAction sn -> sendMetadataStatus(sn.isSneaking());
-                    case SprintAction sp -> sendMetadataStatus(sp.isSprinting());
+                    case LeftClickAction _ -> sendArmAnimation();
+                    case ShowItemAction s -> sendItemInHand(s);
+                    case SneakAction sn -> {
+                        this.isSneaking = sn.isSneaking();
+                        metadataChanged = true;
+                    }
+                    case SprintAction sp -> {
+                        this.isSprinting = sp.isSprinting();
+                        metadataChanged = true;
+                    }
                 }
+            }
+
+            if (metadataChanged) {
+                sendMetadataStatus();
             }
         }
 
@@ -162,7 +177,6 @@ public class ReplayAnimator {
 
         if (distanceSq > 64.0) {
             Set<UUID> currentViewers = new HashSet<>(activeViewers);
-
             for (UUID uuid : currentViewers) {
                 Player viewer = Bukkit.getPlayer(uuid);
                 if (viewer != null && viewer.isOnline()) {
@@ -172,31 +186,54 @@ public class ReplayAnimator {
             }
         } else {
             PacketContainer movePacket = packetFactory.buildMovePacket(npcEntityId, oldPos, newPos);
-            Player dummyPlayer = Bukkit.getPlayer(activeViewers.iterator().next());
-            PacketContainer headPacket = null;
 
-            if (dummyPlayer != null) {
-                headPacket = packetFactory.buildHeadRotationPacket(npcEntityId, newPos, dummyPlayer);
-            }
+            Player dummyPlayer = activeViewers.isEmpty() ? null : Bukkit.getPlayer(activeViewers.iterator().next());
+            PacketContainer headPacket = dummyPlayer != null ? packetFactory.buildHeadRotationPacket(npcEntityId, newPos, dummyPlayer) : null;
 
-            for (UUID uuid : activeViewers) {
-                Player viewer = Bukkit.getPlayer(uuid);
-                if (viewer != null && viewer.isOnline()) {
-                    protocolManager.sendServerPacket(viewer, movePacket);
-                    if (headPacket != null) {
-                        protocolManager.sendServerPacket(viewer, headPacket);
+            sendPacketToAll(movePacket, headPacket);
+        }
+
+        lastPosition = newPos;
+    }
+
+    private void sendMetadataStatus() {
+        if (activeViewers.isEmpty()) return;
+        PacketContainer metadataPacket = packetFactory.buildMetadataPacket(npcEntityId, isSneaking, isSprinting);
+
+        sendPacketToAll(metadataPacket);
+    }
+
+    private void sendArmAnimation() {
+        if (activeViewers.isEmpty()) return;
+
+        Player dummyPlayer = Bukkit.getPlayer(activeViewers.iterator().next());
+        if (dummyPlayer == null) return;
+
+        PacketContainer animationPacket = packetFactory.buildSwingArmPacket(npcEntityId, dummyPlayer);
+        sendPacketToAll(animationPacket);
+    }
+
+    private void sendItemInHand(ShowItemAction s) {
+        if (activeViewers.isEmpty()) return;
+        Material material = Material.valueOf(s.material());
+
+        PacketContainer equipmentPacket = packetFactory.buildItemPacket(npcEntityId, material);
+        sendPacketToAll(equipmentPacket);
+    }
+
+    private void sendPacketToAll(PacketContainer... packets) {
+        if (activeViewers.isEmpty()) return;
+
+        for (UUID uuid : activeViewers) {
+            Player viewer = Bukkit.getPlayer(uuid);
+            if (viewer != null && viewer.isOnline()) {
+                for (PacketContainer packet : packets) {
+                    if (packet != null) {
+                        protocolManager.sendServerPacket(viewer, packet);
                     }
                 }
             }
         }
     }
 
-    private void sendArmAnimation() {
-    }
-
-    private void sendMetadataStatus(boolean sneaking) {
-    }
-
-    private void sendEquipment(ShowItemAction s) {
-    }
 }
