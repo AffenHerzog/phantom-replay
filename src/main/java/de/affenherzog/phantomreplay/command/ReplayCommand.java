@@ -53,9 +53,8 @@ public class ReplayCommand implements PhantomCommand {
                                             boolean state = BoolArgumentType.getBool(context, "state");
 
                                             playbackManager.getSessions().values().stream().filter(it ->
-                                                    replayName.equals(it.getModel().replay().getUniqueName())).findFirst().ifPresent(it -> {
-                                                playbackManager.updateActiveSession(it.getModel().id(), state);
-                                            });
+                                                    replayName.equals(it.getModel().replay().getUniqueName())).findFirst().ifPresent(it ->
+                                                    playbackManager.updateActiveSession(it.getModel().id(), state));
 
                                             context.getSource().getSender().sendMessage("Replay " + replayName + " play: " + state);
                                             return Command.SINGLE_SUCCESS;
@@ -77,9 +76,8 @@ public class ReplayCommand implements PhantomCommand {
                                             VisibilityScope scopeEnum = VisibilityScope.valueOf(scope.toUpperCase());
 
                                             playbackManager.getSessions().values().stream().filter(it ->
-                                                    replayName.equals(it.getModel().replay().getUniqueName())).findFirst().ifPresent(it -> {
-                                                playbackManager.updateVisibilitySession(it.getModel().id(), scopeEnum);
-                                            });
+                                                    replayName.equals(it.getModel().replay().getUniqueName())).findFirst().ifPresent(it ->
+                                                    playbackManager.updateVisibilitySession(it.getModel().id(), scopeEnum));
 
                                             context.getSource().getSender().sendMessage("Replay " + replayName + " visibility: " + scope);
                                             return Command.SINGLE_SUCCESS;

@@ -68,11 +68,11 @@ public class ReplayAnimator {
                     case LeftClickAction _ -> sendArmAnimation();
                     case ShowItemAction s -> sendItemInHand(s);
                     case SneakAction sn -> {
-                        this.isSneaking = sn.isSneaking();
+                        this.isSneaking = sn.sneaking();
                         metadataChanged = true;
                     }
                     case SprintAction sp -> {
-                        this.isSprinting = sp.isSprinting();
+                        this.isSprinting = sp.sprinting();
                         metadataChanged = true;
                     }
                 }
@@ -108,9 +108,11 @@ public class ReplayAnimator {
     private boolean isInRange(Player p, Position pos) {
         if (!p.getWorld().getName().equals(pos.worldName())) return false;
 
-        double dx = p.getLocation().getX() - pos.x();
-        double dy = p.getLocation().getY() - pos.y();
-        double dz = p.getLocation().getZ() - pos.z();
+        Location loc = p.getLocation();
+
+        double dx = loc.getX() - pos.x();
+        double dy = loc.getY() - pos.y();
+        double dz = loc.getZ() - pos.z();
 
         return (dx * dx + dy * dy + dz * dz) <= (60.0 * 60.0);
     }
