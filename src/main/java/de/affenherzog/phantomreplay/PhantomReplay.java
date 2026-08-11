@@ -4,11 +4,12 @@ import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
+import de.affenherzog.phantomreplay.record.RecordingScheduler;
 import de.affenherzog.phantomreplay.session.PlayerJoinListener;
 import de.affenherzog.phantomreplay.session.PlayerLoginService;
 import de.affenherzog.phantomreplay.session.PlayerLogoutService;
 import de.affenherzog.phantomreplay.session.PlayerQuitListener;
-import de.affenherzog.phantomreplay.listener.PlayerSwingArmListener;
+import de.affenherzog.phantomreplay.record.RecordingArmSwingListener;
 import de.affenherzog.phantomreplay.listener.ReplaySavedListener;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackRepository;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PhantomReplay extends JavaPlugin {
 
@@ -33,7 +35,10 @@ public final class PhantomReplay extends JavaPlugin {
     private DatabaseManager databaseManager;
 
     private ReplayRepository replayRepository;
+
+    private RecordingScheduler recordingScheduler;
     private RecordingManager recordingManager;
+
 
     private PlaybackManager playbackManager;
     private PlaybackRepository playbackRepository;
@@ -60,33 +65,23 @@ public final class PhantomReplay extends JavaPlugin {
         playerRepository = new PlayerRepository(databaseManager.getDataSource(), componentLogger);
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
-        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository);
+        recordingScheduler = new RecordingScheduler(new ConcurrentHashMap<>());
+        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, recordingScheduler);
 
         playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
         playbackManager = new PlaybackManager(this, playbackRepository);
 
         registerListener();
         registerCommands();
+        registerScheduler();
 
         log.info("PhantomReplay wurde erfolgreich gestartet.");
     }
 
-    private void registerCommands() {
-        List<PhantomCommand> commands = List.of(
-                new RecordCommand(recordingManager),
-                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
-        );
-
-        commands.forEach(it ->
-                this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
-                        event -> event.registrar().register(it.build())));
-    }
-
     @Override
     public void onDisable() {
-        if (databaseManager != null) {
-            databaseManager.disconnect();
-        }
+        if (databaseManager != null) databaseManager.disconnect();
+        if (recordingScheduler != null) recordingScheduler.cancel();
     }
 
     private boolean setupDatabase() {
@@ -118,7 +113,22 @@ public final class PhantomReplay extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(playerLoginService), this);
         pluginManager.registerEvents(new PlayerQuitListener(playerLogoutService), this);
-        pluginManager.registerEvents(new PlayerSwingArmListener(recordingManager), this);
+        pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
         pluginManager.registerEvents(new ReplaySavedListener(this, playbackRepository, playbackManager), this);
+    }
+
+    private void registerCommands() {
+        List<PhantomCommand> commands = List.of(
+                new RecordCommand(recordingManager),
+                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
+        );
+
+        commands.forEach(it ->
+                this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
+                        event -> event.registrar().register(it.build())));
+    }
+
+    private void registerScheduler() {
+        recordingScheduler.runTaskTimer(this, 0, 1);
     }
 }

@@ -5,11 +5,13 @@ import de.affenherzog.phantomreplay.replay.KeyFrame;
 import de.affenherzog.phantomreplay.replay.Position;
 import de.affenherzog.phantomreplay.replay.action.*;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class Recording {
 
     private final Player player;
@@ -17,19 +19,12 @@ public class Recording {
     private final Runnable onLimitReached;
 
     @Getter
-    private final List<KeyFrame> keyFrames;
+    private final List<KeyFrame> keyFrames = new ArrayList<>();
 
     private int frameCount = 0;
     private boolean leftClickedThisTick = false;
 
-    public Recording(Player player, int maxFrames, Runnable onLimitReached) {
-        this.player = player;
-        this.maxFrames = maxFrames;
-        this.onLimitReached = onLimitReached;
-        this.keyFrames = new ArrayList<>();
-    }
-
-    public void markLeftClick() {
+    public void setLeftClickThisTick() {
         leftClickedThisTick = true;
     }
 
