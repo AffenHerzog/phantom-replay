@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public class PlayerLoginService {
     private final Plugin plugin;
 
     public void loadPlayerData(UUID uuid) {
-        final PhantomPlayer phantomPlayer = new PhantomPlayer(uuid, playbackManager);
+        final PhantomPlayer phantomPlayer = new PhantomPlayer(uuid);
         phantomPlayerManager.addPhantomPlayer(phantomPlayer);
 
         playerRepository.savePlayer(phantomPlayer)
