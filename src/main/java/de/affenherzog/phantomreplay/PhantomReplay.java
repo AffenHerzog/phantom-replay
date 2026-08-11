@@ -4,8 +4,10 @@ import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
-import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
-import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
+import de.affenherzog.phantomreplay.session.PlayerJoinListener;
+import de.affenherzog.phantomreplay.session.PlayerLoginService;
+import de.affenherzog.phantomreplay.session.PlayerLogoutService;
+import de.affenherzog.phantomreplay.session.PlayerQuitListener;
 import de.affenherzog.phantomreplay.listener.PlayerSwingArmListener;
 import de.affenherzog.phantomreplay.listener.ReplaySavedListener;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
@@ -110,9 +112,12 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
+        final PlayerLoginService playerLoginService = new PlayerLoginService(playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, this);
+        final PlayerLogoutService playerLogoutService = new PlayerLogoutService(phantomPlayerManager, recordingManager, playbackManager);
+
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository, playbackRepository, playbackManager), this);
-        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager, playbackManager), this);
+        pluginManager.registerEvents(new PlayerJoinListener(playerLoginService), this);
+        pluginManager.registerEvents(new PlayerQuitListener(playerLogoutService), this);
         pluginManager.registerEvents(new PlayerSwingArmListener(recordingManager), this);
         pluginManager.registerEvents(new ReplaySavedListener(this, playbackRepository, playbackManager), this);
     }
