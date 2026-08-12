@@ -16,7 +16,7 @@ public class PlayerLogoutService {
 
     public void logout(UUID uuid) {
         recordingManager.stopRecording(uuid);
-        playbackManager.removeAll(uuid);
+        playbackManager.removeAllSessions(uuid);
         phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(
                 (_ -> phantomPlayerManager.removePhantomPlayer(uuid)));
     }

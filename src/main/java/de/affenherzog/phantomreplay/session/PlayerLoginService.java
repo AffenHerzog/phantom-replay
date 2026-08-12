@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -58,7 +57,7 @@ public class PlayerLoginService {
                             List<PlaybackSessionRunner> runners = models.stream()
                                     .map(it -> new PlaybackSessionRunner(it, uuid))
                                     .toList();
-                            playbackManager.addSessions(runners);
+                            playbackManager.registerSessions(runners);
                         })));
     }
 

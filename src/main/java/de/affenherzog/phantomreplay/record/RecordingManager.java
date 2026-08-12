@@ -1,6 +1,6 @@
 package de.affenherzog.phantomreplay.record;
 
-import de.affenherzog.phantomreplay.events.ReplaySavedEvent;
+import de.affenherzog.phantomreplay.replay.ReplaySavedEvent;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.replay.KeyFrame;
 import de.affenherzog.phantomreplay.replay.Replay;

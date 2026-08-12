@@ -4,15 +4,13 @@ import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
+import de.affenherzog.phantomreplay.playback.*;
 import de.affenherzog.phantomreplay.record.RecordingScheduler;
 import de.affenherzog.phantomreplay.session.PlayerJoinListener;
 import de.affenherzog.phantomreplay.session.PlayerLoginService;
 import de.affenherzog.phantomreplay.session.PlayerLogoutService;
 import de.affenherzog.phantomreplay.session.PlayerQuitListener;
 import de.affenherzog.phantomreplay.record.RecordingArmSwingListener;
-import de.affenherzog.phantomreplay.listener.ReplaySavedListener;
-import de.affenherzog.phantomreplay.playback.PlaybackManager;
-import de.affenherzog.phantomreplay.playback.PlaybackRepository;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
@@ -39,9 +37,10 @@ public final class PhantomReplay extends JavaPlugin {
     private RecordingScheduler recordingScheduler;
     private RecordingManager recordingManager;
 
-
+    private PlaybackScheduler playbackScheduler;
     private PlaybackManager playbackManager;
     private PlaybackRepository playbackRepository;
+    private PlaybackSessionService playbackSessionService;
 
     private PlayerRepository playerRepository;
     private PhantomPlayerManager phantomPlayerManager;
@@ -68,8 +67,10 @@ public final class PhantomReplay extends JavaPlugin {
         recordingScheduler = new RecordingScheduler(new ConcurrentHashMap<>());
         recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, recordingScheduler);
 
+        playbackScheduler = new PlaybackScheduler(new ConcurrentHashMap<>());
         playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
-        playbackManager = new PlaybackManager(this, playbackRepository);
+        playbackManager = new PlaybackManager(playbackScheduler, playbackRepository);
+        playbackSessionService = new PlaybackSessionService(this, playbackRepository, playbackManager);
 
         registerListener();
         registerCommands();
@@ -81,7 +82,7 @@ public final class PhantomReplay extends JavaPlugin {
     @Override
     public void onDisable() {
         if (databaseManager != null) databaseManager.disconnect();
-        if (recordingScheduler != null) recordingScheduler.cancel();
+        unregisterScheduler();
     }
 
     private boolean setupDatabase() {
@@ -114,7 +115,7 @@ public final class PhantomReplay extends JavaPlugin {
         pluginManager.registerEvents(new PlayerJoinListener(playerLoginService), this);
         pluginManager.registerEvents(new PlayerQuitListener(playerLogoutService), this);
         pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
-        pluginManager.registerEvents(new ReplaySavedListener(this, playbackRepository, playbackManager), this);
+        pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
     }
 
     private void registerCommands() {
@@ -130,5 +131,11 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerScheduler() {
         recordingScheduler.runTaskTimer(this, 0, 1);
+        playbackScheduler.runTaskTimer(this, 0,1);
+    }
+
+    private void unregisterScheduler() {
+        if (recordingScheduler != null) recordingScheduler.cancel();
+        if (playbackScheduler != null) playbackScheduler.cancel();
     }
 }

@@ -101,14 +101,13 @@ public class ReplayCommand implements PhantomCommand {
         Replay replay = getReplayOrSendError(player, replayName);
         if (replay == null) return 0;
 
-        playbackManager.getSessionModelByReplayId(replay.id()).ifPresentOrElse(session -> {
-            player.sendMessage(MM.deserialize(
-                    "<green>Replay <yellow>" + replayName + "</yellow>:" +
-                            " <gray><br> aktiv</gray> <gold>" + session.active() + "</gold>" +
-                            " <gray><br> sichtbar für</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
-                            " <gray><br> session-id</gray> <gold>" + session.id() + "</gold>"
-            ));
-        }, () -> player.sendMessage(MM.deserialize("<red>Fehler: Für '<yellow>" + replayName + "</yellow>' wurde keine Playback-Sitzung gefunden.")));
+        playbackManager.findSessionModelByReplayId(replay.id()).ifPresentOrElse(session ->
+                player.sendMessage(MM.deserialize(
+                        "<green>Replay <yellow>" + replayName + "</yellow>:" +
+                                " <gray><br> aktiv</gray> <gold>" + session.active() + "</gold>" +
+                                " <gray><br> sichtbar für</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
+                                " <gray><br> session-id</gray> <gold>" + session.id() + "</gold>"
+                )), () -> player.sendMessage(MM.deserialize("<red>Fehler: Für '<yellow>" + replayName + "</yellow>' wurde keine Playback-Sitzung gefunden.")));
 
         return Command.SINGLE_SUCCESS;
     }
@@ -121,7 +120,7 @@ public class ReplayCommand implements PhantomCommand {
         VisibilityScope scopeEnum;
         try {
             scopeEnum = VisibilityScope.valueOf(scopeInput);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             player.sendMessage(MM.deserialize("<red>Ungültige Sichtbarkeit! Bitte nutze GLOBAL oder PRIVAT."));
             return 0;
         }
