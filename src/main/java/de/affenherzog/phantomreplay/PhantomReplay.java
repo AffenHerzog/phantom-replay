@@ -1,5 +1,6 @@
 package de.affenherzog.phantomreplay;
 
+import de.affenherzog.phantomreplay.application.ReplayManagementService;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
@@ -40,10 +41,13 @@ public final class PhantomReplay extends JavaPlugin {
     private PlaybackScheduler playbackScheduler;
     private PlaybackManager playbackManager;
     private PlaybackRepository playbackRepository;
-    private PlaybackSessionService playbackSessionService;
+
 
     private PlayerRepository playerRepository;
     private PhantomPlayerManager phantomPlayerManager;
+
+    private PlaybackSessionService playbackSessionService;
+    private ReplayManagementService replayManagementService;
 
     private Logger log;
     private ComponentLogger componentLogger;
@@ -70,7 +74,9 @@ public final class PhantomReplay extends JavaPlugin {
         playbackScheduler = new PlaybackScheduler(new ConcurrentHashMap<>());
         playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
         playbackManager = new PlaybackManager(playbackScheduler, playbackRepository);
+
         playbackSessionService = new PlaybackSessionService(this, playbackRepository, playbackManager);
+        replayManagementService = new ReplayManagementService(phantomPlayerManager, playbackManager, replayRepository);
 
         registerListener();
         registerCommands();
@@ -120,7 +126,7 @@ public final class PhantomReplay extends JavaPlugin {
     private void registerCommands() {
         List<PhantomCommand> commands = List.of(
                 new RecordCommand(recordingManager),
-                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
+                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService)
         );
 
         commands.forEach(it ->
