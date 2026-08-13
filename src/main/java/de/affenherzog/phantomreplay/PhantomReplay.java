@@ -4,13 +4,13 @@ import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
+import de.affenherzog.phantomreplay.listener.PlaybackReplaySavedListener;
 import de.affenherzog.phantomreplay.playback.*;
 import de.affenherzog.phantomreplay.record.RecordingScheduler;
-import de.affenherzog.phantomreplay.session.PlayerJoinListener;
-import de.affenherzog.phantomreplay.session.PlayerLoginService;
-import de.affenherzog.phantomreplay.session.PlayerLogoutService;
-import de.affenherzog.phantomreplay.session.PlayerQuitListener;
-import de.affenherzog.phantomreplay.record.RecordingArmSwingListener;
+import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
+import de.affenherzog.phantomreplay.application.PlayerConnectionService;
+import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
+import de.affenherzog.phantomreplay.listener.RecordingArmSwingListener;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
@@ -108,12 +108,11 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
-        final PlayerLoginService playerLoginService = new PlayerLoginService(playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, this);
-        final PlayerLogoutService playerLogoutService = new PlayerLogoutService(phantomPlayerManager, recordingManager, playbackManager);
+        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager);
 
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new PlayerJoinListener(playerLoginService), this);
-        pluginManager.registerEvents(new PlayerQuitListener(playerLogoutService), this);
+        pluginManager.registerEvents(new PlayerJoinListener(playerConnectionService), this);
+        pluginManager.registerEvents(new PlayerQuitListener(playerConnectionService), this);
         pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
         pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
     }

@@ -1,4 +1,4 @@
-package de.affenherzog.phantomreplay.session;
+package de.affenherzog.phantomreplay.application;
 
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackRepository;
@@ -6,6 +6,7 @@ import de.affenherzog.phantomreplay.playback.PlaybackSessionRunner;
 import de.affenherzog.phantomreplay.player.PhantomPlayer;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
+import de.affenherzog.phantomreplay.record.RecordingManager;
 import de.affenherzog.phantomreplay.replay.Replay;
 import de.affenherzog.phantomreplay.replay.ReplayRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +20,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class PlayerLoginService {
+public class PlayerConnectionService {
+
+    private final Plugin plugin;
 
     private final PlayerRepository playerRepository;
     private final ReplayRepository replayRepository;
     private final PlaybackRepository playbackRepository;
+
     private final PhantomPlayerManager phantomPlayerManager;
     private final PlaybackManager playbackManager;
-    private final Plugin plugin;
+    private final RecordingManager recordingManager;
+
 
     public void loadPlayerData(UUID uuid) {
         final PhantomPlayer phantomPlayer = new PhantomPlayer(uuid);
@@ -59,6 +64,13 @@ public class PlayerLoginService {
                                     .toList();
                             playbackManager.registerSessions(runners);
                         })));
+    }
+
+    public void logout(UUID uuid) {
+        recordingManager.stopRecording(uuid);
+        playbackManager.removeAllSessions(uuid);
+        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(
+                (_ -> phantomPlayerManager.removePhantomPlayer(uuid)));
     }
 
 }
