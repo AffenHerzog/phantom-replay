@@ -8,10 +8,6 @@ import org.bukkit.World;
 public record Position(double x, double y, double z, @SerializedName("ry") float yaw, @SerializedName("rp") float pitch,
                        @SerializedName("w") String worldName) {
 
-    public Location toBukkitLocation(World world) {
-        return new Location(world, x, y, z, yaw, pitch);
-    }
-
     public static Position fromBukkitLocation(Location loc) {
         return new Position(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch(), loc.getWorld().getName());
     }
@@ -24,6 +20,22 @@ public record Position(double x, double y, double z, @SerializedName("ry") float
                 MathUtils.roundRotation(loc.getYaw()),
                 MathUtils.roundRotation(loc.getPitch()),
                 loc.getWorld().getName());
+    }
+
+    public Location toBukkitLocation(World world) {
+        return new Location(world, x, y, z, yaw, pitch);
+    }
+
+    public int getBlockX() {
+        return (int) x;
+    }
+
+    public int getBlockY() {
+        return (int) y;
+    }
+
+    public int getBlockZ() {
+        return (int) z;
     }
 
 }

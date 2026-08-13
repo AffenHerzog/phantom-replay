@@ -9,6 +9,7 @@ import de.affenherzog.phantomreplay.application.ReplayManagementService;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.VisibilityScope;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
+import de.affenherzog.phantomreplay.replay.Position;
 import de.affenherzog.phantomreplay.replay.Replay;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -98,13 +99,17 @@ public class ReplayCommand implements PhantomCommand {
         Replay replay = getReplayOrSendError(player, replayName);
         if (replay == null) return 0;
 
+        Position startPosition = replay.getStartPosition();
+        String startPositionString = startPosition.getBlockX() + " " + startPosition.getBlockY() + " " + startPosition.getBlockZ();
+
         playbackManager.findSessionModelByReplayId(replay.id()).ifPresentOrElse(session ->
                 player.sendMessage(MM.deserialize(
                         "<green>Replay <yellow>" + replayName + "</yellow>:" +
-                                " <gray><br> aktiv</gray> <gold>" + session.active() + "</gold>" +
-                                " <gray><br> sichtbar für</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
-                                " <gray><br> session-id</gray> <gold>" + session.id() + "</gold>"
-                )), () -> player.sendMessage(MM.deserialize("<red>Fehler: Für '<yellow>" + replayName + "</yellow>' wurde keine Playback-Sitzung gefunden.")));
+                                " <gray><br> Aktiv:</gray> <gold>" + session.active() + "</gold>" +
+                                " <gray><br> Sichtbarkeit:</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
+                                " <gray><br> Session-Id:</gray> <gold>" + session.id() + "</gold>" +
+                                " <gray><br> Start Position:</gray> <gold>" + startPositionString + "</gold>"
+                )), () -> player.sendMessage(MM.deserialize("<red>Für <yellow>" + replayName + "</yellow>  wurde keine Playback-Sitzung gefunden.")));
 
         return Command.SINGLE_SUCCESS;
     }
