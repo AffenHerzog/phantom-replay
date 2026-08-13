@@ -23,4 +23,8 @@ public record Replay(int id, String name, UUID uuid, List<KeyFrame> keyFrames) {
         return new Replay(this.id, newName, this.uuid, this.keyFrames);
     }
 
+    public Position getStartPosition() {
+        return keyFrames.getFirst().frame().position();
+    }
+
 }
