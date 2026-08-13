@@ -17,10 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class PacketFactory {
+class PacketFactory {
 
     private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-
 
     public PacketContainer buildInfoPackage(UUID npcUUID, String npcName) {
         PacketContainer gameProfilePacket = protocolManager.createPacket(PacketType.Play.Server.PLAYER_INFO);

@@ -6,44 +6,39 @@ import com.comphenix.protocol.events.PacketContainer;
 import de.affenherzog.phantomreplay.replay.Frame;
 import de.affenherzog.phantomreplay.replay.Position;
 import de.affenherzog.phantomreplay.replay.action.*;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class ReplayAnimator {
+@RequiredArgsConstructor
+class ReplayAnimator {
 
-    private final int npcEntityId;
+    private static final AtomicInteger ENTITY_ID_COUNTER = new AtomicInteger(100_000_000);
+
+    private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+    private final PacketFactory packetFactory = new PacketFactory();
+
+    private final int npcEntityId = ENTITY_ID_COUNTER.incrementAndGet();
     private final UUID npcUUID = UUID.randomUUID();
 
-    private final ProtocolManager protocolManager;
-    private final PacketFactory packetFactory = new PacketFactory();
+    private final UUID ownerUUID;
+    private final Set<UUID> activeViewers = new HashSet<>();
 
     private Position lastPosition;
     private boolean isSneaking = false;
     private boolean isSprinting = false;
 
-    private final Set<UUID> activeViewers = new HashSet<>();
-
     @Setter
+    @NotNull
     private VisibilityScope scope;
-
-    private final UUID ownerUUID;
-
-    public ReplayAnimator(VisibilityScope scope, UUID ownerUUID) {
-        this.scope = scope;
-        this.ownerUUID = ownerUUID;
-        this.protocolManager = ProtocolLibrary.getProtocolManager();
-        this.npcEntityId = generateEntityId();
-    }
-
-    private int generateEntityId() {
-        return 100000 + (new Random().nextInt(900000));
-    }
 
     public void playFrame(Frame frame) {
         updateActiveViewers(frame.position());
@@ -67,12 +62,12 @@ public class ReplayAnimator {
                 switch (action) {
                     case LeftClickAction _ -> sendArmAnimation();
                     case ShowItemAction s -> sendItemInHand(s);
-                    case SneakAction sn -> {
-                        this.isSneaking = sn.sneaking();
+                    case SneakAction(boolean sneaking) -> {
+                        this.isSneaking = sneaking;
                         metadataChanged = true;
                     }
-                    case SprintAction sp -> {
-                        this.isSprinting = sp.sprinting();
+                    case SprintAction(boolean sprinting) -> {
+                        this.isSprinting = sprinting;
                         metadataChanged = true;
                     }
                 }

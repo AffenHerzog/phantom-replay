@@ -1,6 +1,5 @@
-package de.affenherzog.phantomreplay.events;
+package de.affenherzog.phantomreplay.replay;
 
-import de.affenherzog.phantomreplay.replay.Replay;
 import lombok.Getter;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

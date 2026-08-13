@@ -5,32 +5,29 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.affenherzog.phantomreplay.application.ReplayManagementService;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.VisibilityScope;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.replay.Replay;
-import de.affenherzog.phantomreplay.replay.ReplayRepository;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 
 import java.util.Optional;
 
 import static de.affenherzog.phantomreplay.util.MUtil.MM;
 
+@RequiredArgsConstructor
 public class ReplayCommand implements PhantomCommand {
 
     private final PlaybackManager playbackManager;
-    private final ReplayRepository replayRepository;
     private final PhantomPlayerManager phantomPlayerManager;
 
-    private static final String REPLAY_NAME_ARGUMENT = "replay_name";
+    private final ReplayManagementService replayManagementService;
 
-    public ReplayCommand(PlaybackManager playbackManager, ReplayRepository replayRepository, PhantomPlayerManager phantomPlayerManager) {
-        this.playbackManager = playbackManager;
-        this.replayRepository = replayRepository;
-        this.phantomPlayerManager = phantomPlayerManager;
-    }
+    private static final String REPLAY_NAME_ARGUMENT = "replay_name";
 
     public LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("replay")
@@ -89,7 +86,7 @@ public class ReplayCommand implements PhantomCommand {
             player.sendMessage(MM.deserialize("<green>Replay <yellow>" + replayName + "</yellow> Play-Status auf <gold>" + state + "</gold> gesetzt."));
             return Command.SINGLE_SUCCESS;
         } else {
-            player.sendMessage(MM.deserialize("<red>Fehler: Konnte den Play-Status für '<yellow>" + replayName + "</yellow>' nicht ändern, ist es bereits aktiv?"));
+            player.sendMessage(MM.deserialize("<red>Konnte den Play-Status für <yellow>" + replayName + "</yellow> nicht ändern, ist es bereits so eingestellt?"));
             return 0;
         }
     }
@@ -101,14 +98,13 @@ public class ReplayCommand implements PhantomCommand {
         Replay replay = getReplayOrSendError(player, replayName);
         if (replay == null) return 0;
 
-        playbackManager.getSessionModelByReplayId(replay.id()).ifPresentOrElse(session -> {
-            player.sendMessage(MM.deserialize(
-                    "<green>Replay <yellow>" + replayName + "</yellow>:" +
-                            " <gray><br> aktiv</gray> <gold>" + session.active() + "</gold>" +
-                            " <gray><br> sichtbar für</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
-                            " <gray><br> session-id</gray> <gold>" + session.id() + "</gold>"
-            ));
-        }, () -> player.sendMessage(MM.deserialize("<red>Fehler: Für '<yellow>" + replayName + "</yellow>' wurde keine Playback-Sitzung gefunden.")));
+        playbackManager.findSessionModelByReplayId(replay.id()).ifPresentOrElse(session ->
+                player.sendMessage(MM.deserialize(
+                        "<green>Replay <yellow>" + replayName + "</yellow>:" +
+                                " <gray><br> aktiv</gray> <gold>" + session.active() + "</gold>" +
+                                " <gray><br> sichtbar für</gray> <gold>" + session.visibilityScope().name() + "</gold>" +
+                                " <gray><br> session-id</gray> <gold>" + session.id() + "</gold>"
+                )), () -> player.sendMessage(MM.deserialize("<red>Fehler: Für '<yellow>" + replayName + "</yellow>' wurde keine Playback-Sitzung gefunden.")));
 
         return Command.SINGLE_SUCCESS;
     }
@@ -121,7 +117,7 @@ public class ReplayCommand implements PhantomCommand {
         VisibilityScope scopeEnum;
         try {
             scopeEnum = VisibilityScope.valueOf(scopeInput);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             player.sendMessage(MM.deserialize("<red>Ungültige Sichtbarkeit! Bitte nutze GLOBAL oder PRIVAT."));
             return 0;
         }
@@ -135,7 +131,7 @@ public class ReplayCommand implements PhantomCommand {
             player.sendMessage(MM.deserialize("<green>Sichtbarkeit für <yellow>" + replayName + "</yellow> ist nun <gold>" + scopeEnum.name() + "</gold>."));
             return Command.SINGLE_SUCCESS;
         } else {
-            player.sendMessage(MM.deserialize("<red>Fehler: Konnte die Sichtbarkeit für '<yellow>" + replayName + "</yellow>' nicht ändern. Ist die Sichtbarkeit bereits so eingestellt?"));
+            player.sendMessage(MM.deserialize("<red>Konnte die Sichtbarkeit für <yellow>" + replayName + "</yellow> nicht ändern. Ist die Sichtbarkeit bereits so eingestellt?"));
             return 0;
         }
     }
@@ -148,15 +144,11 @@ public class ReplayCommand implements PhantomCommand {
         Replay replay = getReplayOrSendError(player, replayName);
         if (replay == null) return 0;
 
-        Replay newReplay = replay.withName(newName);
-        phantomPlayerManager.getPhantomPlayer(player.getUniqueId()).ifPresent(it -> {
-            it.getOwnedReplays().removeIf(old -> old.getUniqueName().equals(replayName));
-            it.getOwnedReplays().add(newReplay);
-        });
-        playbackManager.loadReplayIntoSession(newReplay.id(), newReplay);
-        replayRepository.updateReplayName(newReplay.id(), newReplay.name());
-
-        player.sendMessage(MM.deserialize("<green>Replay <yellow>" + replayName + "</yellow> erfolgreich zu <gold>" + newName + "</gold> umbenannt."));
+        replayManagementService.renameReplay(replay, player.getUniqueId(), newName).ifPresentOrElse(_ ->
+                        player.sendMessage(MM.deserialize("<green>Replay <yellow>" + replayName + "</yellow> erfolgreich zu <gold>" + newName + "</gold> umbenannt.")),
+                () ->
+                        player.sendMessage(MM.deserialize("<red>Der Replayname konnte nicht geändert werden <yellow>"))
+        );
 
         return Command.SINGLE_SUCCESS;
     }
@@ -168,11 +160,7 @@ public class ReplayCommand implements PhantomCommand {
         Replay replay = getReplayOrSendError(player, replayName);
         if (replay == null) return 0;
 
-        phantomPlayerManager.getPhantomPlayer(player.getUniqueId()).ifPresent(it ->
-                it.getOwnedReplays().removeIf(old -> old.id() == replay.id())
-        );
-        playbackManager.removeSessionByReplayId(replay.id());
-        replayRepository.deleteReplay(replay.id());
+        replayManagementService.deleteReplay(replay, player.getUniqueId());
 
         player.sendMessage(MM.deserialize("<green>Replay <yellow>" + replayName + "</yellow> wurde gelöscht."));
 
@@ -186,7 +174,7 @@ public class ReplayCommand implements PhantomCommand {
                         .findFirst());
 
         if (optReplay.isEmpty()) {
-            player.sendMessage(MM.deserialize("<red>Fehler: Du besitzt kein Replay mit dem Namen '<yellow>" + replayName + "</yellow>'."));
+            player.sendMessage(MM.deserialize("<red>Du besitzt kein Replay mit dem Namen <yellow>" + replayName + "</yellow>."));
             return null;
         }
 
