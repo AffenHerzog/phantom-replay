@@ -5,13 +5,10 @@ import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
-import de.affenherzog.phantomreplay.listener.PlaybackReplaySavedListener;
+import de.affenherzog.phantomreplay.listener.*;
 import de.affenherzog.phantomreplay.playback.*;
 import de.affenherzog.phantomreplay.record.RecordingScheduler;
-import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
 import de.affenherzog.phantomreplay.application.PlayerConnectionService;
-import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
-import de.affenherzog.phantomreplay.listener.RecordingArmSwingListener;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
@@ -121,6 +118,7 @@ public final class PhantomReplay extends JavaPlugin {
         pluginManager.registerEvents(new PlayerQuitListener(playerConnectionService), this);
         pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
         pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
+        pluginManager.registerEvents(new InventoryClickListener(), this);
     }
 
     private void registerCommands() {
@@ -136,7 +134,7 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerScheduler() {
         recordingScheduler.runTaskTimer(this, 0, 1);
-        playbackScheduler.runTaskTimer(this, 0,1);
+        playbackScheduler.runTaskTimer(this, 0, 1);
     }
 
     private void unregisterScheduler() {
