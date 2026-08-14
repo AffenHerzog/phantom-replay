@@ -1,22 +1,20 @@
 package de.affenherzog.phantomreplay.command;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import de.affenherzog.phantomreplay.gui.playback.PlaybackGui;
-import de.affenherzog.phantomreplay.playback.PlaybackManager;
+import de.affenherzog.phantomreplay.gui.playback.PlaybackGuiService;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
+
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class GuiReplayCommand implements PhantomCommand {
 
-    private final Plugin plugin;
-
-    private final PlaybackManager playbackManager;
     private final PhantomPlayerManager phantomPlayerManager;
+    private final PlaybackGuiService playbackGuiService;
 
     public LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("playback")
@@ -30,8 +28,9 @@ public class GuiReplayCommand implements PhantomCommand {
     }
 
     private void openReplayGui(Player player) {
-        phantomPlayerManager.getPhantomPlayer(player.getUniqueId()).ifPresent(_ ->
-                new PlaybackGui(plugin, player.getUniqueId(), playbackManager).open());
+        UUID uuid = player.getUniqueId();
+        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(_ ->
+                playbackGuiService.openPlaybackGui(uuid));
 
     }
 

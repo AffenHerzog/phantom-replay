@@ -11,15 +11,17 @@ import org.bukkit.plugin.Plugin;
 import java.util.UUID;
 
 import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.buildBlackFillerGuiItem;
-import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.buildReturnToReplayGuiItem;
+import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.buildReturnToPlaybackGuiItem;
 
 public abstract class AbstractPlaybackModifyAllGui extends PhantomGui {
 
+    protected final PlaybackGuiService playbackGuiService;
     protected final PlaybackManager playbackManager;
     protected final PlaybackStats playbackStats;
 
-    protected AbstractPlaybackModifyAllGui(Plugin plugin, UUID playerUUID, Component title, PlaybackManager playbackManager, PlaybackStats playbackStats) {
+    protected AbstractPlaybackModifyAllGui(Plugin plugin, UUID playerUUID, Component title, PlaybackGuiService playbackGuiService, PlaybackManager playbackManager, PlaybackStats playbackStats) {
         super(plugin, playerUUID, title, InventoryType.HOPPER);
+        this.playbackGuiService = playbackGuiService;
         this.playbackManager = playbackManager;
         this.playbackStats = playbackStats;
         initialise();
@@ -27,7 +29,7 @@ public abstract class AbstractPlaybackModifyAllGui extends PhantomGui {
 
     @Override
     protected void addItems() {
-        items.put(2, buildReturnToReplayGuiItem(plugin, playerUUID, playbackManager));
+        items.put(2, buildReturnToPlaybackGuiItem(playerUUID, playbackGuiService));
     }
 
     @Override

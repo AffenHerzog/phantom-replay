@@ -2,12 +2,11 @@ package de.affenherzog.phantomreplay.gui.playback;
 
 import de.affenherzog.phantomreplay.gui.PhantomGui;
 import de.affenherzog.phantomreplay.gui.item.PhantomGuiItem;
+import de.affenherzog.phantomreplay.gui.util.GuiSoundUtil;
 import de.affenherzog.phantomreplay.gui.util.GuiTitleUtil;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackSessionModel;
 import de.affenherzog.phantomreplay.playback.PlaybackStats;
-import de.affenherzog.phantomreplay.playback.VisibilityScope;
-import de.affenherzog.phantomreplay.replay.Position;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -17,9 +16,8 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 
+import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.*;
 import static de.affenherzog.phantomreplay.gui.util.GuiFillerUtil.fillBorder;
-import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.buildBlackFillerGuiItem;
-import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.buildCloseGuiItem;
 import static de.affenherzog.phantomreplay.util.MUtil.MM;
 
 public class PlaybackGui extends PhantomGui {
@@ -30,10 +28,12 @@ public class PlaybackGui extends PhantomGui {
     private static final Component CENTERED_GUI_TITLE = GuiTitleUtil.centerTitle(TITLE, "Aufnahmen");
 
     private final PlaybackManager playbackManager;
+    private final PlaybackGuiService playbackGuiService;
 
-    public PlaybackGui(Plugin plugin, UUID uuid, PlaybackManager playbackManager) {
+    public PlaybackGui(Plugin plugin, UUID uuid, PlaybackManager playbackManager, PlaybackGuiService playbackGuiService) {
         super(plugin, uuid, CENTERED_GUI_TITLE, 54);
         this.playbackManager = playbackManager;
+        this.playbackGuiService = playbackGuiService;
         initialise();
     }
 
@@ -41,7 +41,7 @@ public class PlaybackGui extends PhantomGui {
     protected void addItems() {
         PlaybackStats playbackStats = playbackManager.getPlayerPlaybackStats(playerUUID);
 
-        items.put(49, buildCloseGuiItem(this));
+        items.put(49, buildCloseGuiItem(this, playerUUID));
         items.put(2, buildToggleGlobalVisibilityItem(playbackStats));
         items.put(4, buildInfoItem(playbackStats.totalCount()));
         items.put(6, buildToggleGlobalActiveItem(playbackStats));
@@ -53,7 +53,14 @@ public class PlaybackGui extends PhantomGui {
             if (i >= sessions.size()) {
                 return;
             }
-            items.put(emptySlots.pop(), buildPlaybackItem(sessions.get(i)));
+
+            PlaybackSessionModel session = sessions.get(i);
+
+            items.put(emptySlots.pop(), buildPlaybackItem(session, true,
+                    () -> {
+                        playbackGuiService.openPlaybackDetailedGui(playerUUID, session);
+                        GuiSoundUtil.playClick(getPlayer());
+                    }));
         }
     }
 
@@ -68,29 +75,6 @@ public class PlaybackGui extends PhantomGui {
         return emptySlots;
     }
 
-    private PhantomGuiItem buildPlaybackItem(PlaybackSessionModel session) {
-        String active = session.active() ? "<dark_green>Aktiv" : "<dark_red>Inaktiv";
-
-        String visibility = session.visibilityScope() == VisibilityScope.PRIVAT ? "Privat" : "Öffentlich";
-
-        Position startPosition = session.replay().getStartPosition();
-        String startPositionString = startPosition.getBlockX() + " " + startPosition.getBlockY() + " " + startPosition.getBlockZ();
-
-        ItemStack itemStack = new ItemStack(Material.ENCHANTED_BOOK);
-        itemStack.editMeta(meta -> {
-           meta.displayName(MM.deserialize("<dark_gray>" + session.replay().name()));
-           meta.lore(List.of(
-                   Component.empty(),
-                   MM.deserialize("<gray>Aktivitätsstatus: <yellow>" + active),
-                   MM.deserialize("<gray>Sichtbarkeit: <yellow>" + visibility),
-                   MM.deserialize("<gray>Startpunkt: <yellow>" + startPositionString),
-                   Component.empty(),
-                   MM.deserialize("<gold>▶ Klicke zum Anpassen</gold>")
-           ));
-        });
-        return new PhantomGuiItem(itemStack, () -> {});
-    }
-
     private PhantomGuiItem buildInfoItem(int replayCount) {
         ItemStack itemStack = new ItemStack(Material.NETHER_STAR);
         itemStack.editMeta(meta -> {
@@ -103,7 +87,8 @@ public class PlaybackGui extends PhantomGui {
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         });
 
-        return new PhantomGuiItem(itemStack, () -> {});
+        return new PhantomGuiItem(itemStack, () -> {
+        });
     }
 
     private PhantomGuiItem buildToggleGlobalVisibilityItem(PlaybackStats playbackStats) {
@@ -122,8 +107,10 @@ public class PlaybackGui extends PhantomGui {
             ));
         });
 
-        return new PhantomGuiItem(itemStack, () ->
-                new PlaybackVisibilityGui(plugin, playerUUID, playbackManager, playbackStats).open());
+        return new PhantomGuiItem(itemStack, () -> {
+            playbackGuiService.openPlaybackVisibilityGui(playerUUID, playbackStats);
+            GuiSoundUtil.playClick(getPlayer());
+        });
     }
 
     private PhantomGuiItem buildToggleGlobalActiveItem(PlaybackStats playbackStats) {
@@ -143,8 +130,11 @@ public class PlaybackGui extends PhantomGui {
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         });
 
-        return new PhantomGuiItem(itemStack, () ->
-                new PlaybackActiveGui(plugin, playerUUID, playbackManager, playbackStats).open());
+        return new PhantomGuiItem(itemStack, () -> {
+            playbackGuiService.openPlaybackActiveGui(playerUUID, playbackStats);
+            GuiSoundUtil.playClick(getPlayer());
+        });
+
     }
 
     @Override
