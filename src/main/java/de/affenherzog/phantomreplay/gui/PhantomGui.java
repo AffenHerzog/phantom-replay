@@ -9,6 +9,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,21 +17,27 @@ import java.util.UUID;
 
 public abstract class PhantomGui implements InventoryHolder {
 
-    private final UUID playerUUID;
+    protected final Plugin plugin;
+    protected final UUID playerUUID;
 
     protected final Inventory inventory;
     protected final Map<Integer, PhantomGuiItem> items = new HashMap<>();
 
     protected PhantomGui(Plugin plugin, UUID playerUUID, Component title, InventoryType inventoryType) {
+        this.plugin = plugin;
         this.playerUUID = playerUUID;
         this.inventory = plugin.getServer().createInventory(this, inventoryType, title);
-        initialise();
     }
 
     protected PhantomGui(Plugin plugin, UUID playerUUID, Component title, int size) {
+        this.plugin = plugin;
         this.playerUUID = playerUUID;
         this.inventory = plugin.getServer().createInventory(this, size, title);
-        initialise();
+    }
+
+    @Override
+    public @NotNull Inventory getInventory() {
+        return inventory;
     }
 
     public void onInventoryClick(int slot) {
@@ -55,16 +62,20 @@ public abstract class PhantomGui implements InventoryHolder {
 
     protected abstract void addItems();
 
-    protected abstract void setFiller();
+    protected abstract void addFiller();
 
     protected Player getPlayer() {
         return Bukkit.getPlayer(playerUUID);
     }
 
-    private void initialise() {
+    protected void initialise() {
+        addFiller();
         addItems();
-        setFiller();
         setItems();
+    }
+
+    protected void updateSlot(int slot) {
+        inventory.setItem(slot, items.get(slot).getItemStack());
     }
 
     private void setItems() {

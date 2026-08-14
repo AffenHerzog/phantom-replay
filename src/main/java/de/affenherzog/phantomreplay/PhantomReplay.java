@@ -1,6 +1,7 @@
 package de.affenherzog.phantomreplay;
 
 import de.affenherzog.phantomreplay.application.ReplayManagementService;
+import de.affenherzog.phantomreplay.command.GuiReplayCommand;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
@@ -124,7 +125,8 @@ public final class PhantomReplay extends JavaPlugin {
     private void registerCommands() {
         List<PhantomCommand> commands = List.of(
                 new RecordCommand(recordingManager),
-                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService)
+                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService),
+                new GuiReplayCommand(this, playbackManager, phantomPlayerManager)
         );
 
         commands.forEach(it ->

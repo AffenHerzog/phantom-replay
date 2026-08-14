@@ -2,7 +2,6 @@ package de.affenherzog.phantomreplay.playback;
 
 import de.affenherzog.phantomreplay.replay.Replay;
 import de.affenherzog.phantomreplay.util.MUtil;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ public class PlaybackManager {
     private final PlaybackScheduler playbackScheduler;
     private final PlaybackRepository playbackRepository;
 
-    @Getter
     private final Map<Integer, PlaybackSessionRunner> sessions = new ConcurrentHashMap<>();
 
     public void registerSessions(List<PlaybackSessionRunner> sessionsToAdd) {
@@ -31,6 +29,13 @@ public class PlaybackManager {
         if (sessionToAdd.isActive()) {
             playbackScheduler.addPlaybackSession(sessionToAdd);
         }
+    }
+
+    public List<PlaybackSessionModel> getSessions(UUID ownerUuid) {
+        return sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .map(PlaybackSessionRunner::getModel)
+                .toList();
     }
 
     public Optional<PlaybackSessionModel> findSessionModelByReplayId(int replayId) {
@@ -61,6 +66,14 @@ public class PlaybackManager {
         runner.updateReplay(replay);
     }
 
+    public boolean updateActiveSession(UUID ownerUuid, boolean active) {
+        return sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .map(PlaybackSessionRunner::getModel)
+                .map(model -> updateActiveSession(model.replay().id(), active))
+                .reduce(false, (a, b) -> a || b);
+    }
+
     public boolean updateActiveSession(int replayId, boolean active) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
 
@@ -78,6 +91,14 @@ public class PlaybackManager {
         updatePlaybackModelInDatabase(runner.getModel());
 
         return true;
+    }
+
+    public boolean updateVisibilitySession(UUID ownerUuid, VisibilityScope scope) {
+        return sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .map(PlaybackSessionRunner::getModel)
+                .map(model -> updateVisibilitySession(model.replay().id(), scope))
+                .reduce(false, (a, b) -> a || b);
     }
 
     public boolean updateVisibilitySession(int replayId, VisibilityScope scope) {
@@ -109,5 +130,30 @@ public class PlaybackManager {
         return sessions.values().stream()
                 .map(it -> MUtil.stripe(it.getUniqueReplayName()))
                 .toList();
+    }
+
+    public PlaybackStats getPlayerPlaybackStats(UUID ownerUuid) {
+        int totalCount = 0;
+        int privateCount = 0;
+        int globalCount = 0;
+        int activeCount = 0;
+        int inactiveCount = 0;
+
+        for (PlaybackSessionRunner session : sessions.values()) {
+            if (session.getOwnerUUID().equals(ownerUuid)) {
+                totalCount++;
+                if (session.getModel().visibilityScope() == VisibilityScope.PRIVAT) {
+                    privateCount++;
+                } else {
+                    globalCount++;
+                }
+                if (session.isActive()) {
+                    activeCount++;
+                } else {
+                    inactiveCount++;
+                }
+            }
+        }
+        return new PlaybackStats(totalCount, privateCount, globalCount, activeCount, inactiveCount);
     }
 }

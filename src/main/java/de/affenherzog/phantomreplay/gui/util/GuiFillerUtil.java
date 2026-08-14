@@ -23,4 +23,14 @@ public class GuiFillerUtil {
         return filler;
     }
 
+    public static Map<Integer, PhantomGuiItem> fill(int size, PhantomGuiItem fillerItem) {
+        Map<Integer, PhantomGuiItem> filler = new HashMap<>();
+
+        for (int i = 0; i < size; i++) {
+            filler.put(i, fillerItem);
+        }
+
+        return filler;
+    }
+
 }
