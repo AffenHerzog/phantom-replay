@@ -117,7 +117,7 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
-        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager);
+        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager, replayManagementService);
 
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(playerConnectionService), this);
@@ -125,6 +125,7 @@ public final class PhantomReplay extends JavaPlugin {
         pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
         pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
         pluginManager.registerEvents(new InventoryClickListener(), this);
+        pluginManager.registerEvents(new RenamePlaybackChatListener(this, playbackGuiService, replayManagementService), this);
     }
 
     private void registerCommands() {

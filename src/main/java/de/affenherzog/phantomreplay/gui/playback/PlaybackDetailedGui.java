@@ -10,7 +10,9 @@ import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackSessionModel;
 import de.affenherzog.phantomreplay.playback.VisibilityScope;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
@@ -43,7 +45,8 @@ public class PlaybackDetailedGui extends PhantomGui {
 
     @Override
     protected void addItems() {
-        items.put(4, buildPlaybackItem(session, false, () -> {}));
+        items.put(4, buildPlaybackItem(session, false, () -> {
+        }));
         items.put(11, buildRenameItem());
         items.put(13, buildActiveItem(session));
         items.put(15, buildVisibilityItem(session));
@@ -54,12 +57,33 @@ public class PlaybackDetailedGui extends PhantomGui {
     private PhantomGuiItem buildRenameItem() {
         ItemStack infoItemStack = new ItemStack(Material.WRITABLE_BOOK);
         infoItemStack.editMeta(meta -> meta.displayName(MM.deserialize("<gradient:#660000:#8b3a00><bold>Umbenennen</bold></gradient>")));
-        return new PhantomGuiItem(infoItemStack, () -> {});
+        return new PhantomGuiItem(infoItemStack, () -> {
+            Player player = getPlayer();
+
+            if (replayManagementService.isRenaming(playerUUID)) {
+                player.sendMessage(MM.deserialize("<gray>Du bist bereits im Prozess der Umbenennung!"));
+                close();
+                GuiSoundUtil.playWarning(player);
+                return;
+            }
+
+            replayManagementService.addRenaming(playerUUID, session.replay());
+
+            player.showTitle(Title.title(
+                    MM.deserialize("<gold>Chat öffnen</gold>"),
+                    MM.deserialize("<gray>Tippe den neuen Namen ein</gray>")
+            ));
+            player.sendMessage(MM.deserialize("<gray>▶ Bitte gib den neuen Namen für das Replay ein.\n</gray>" +
+                    "<gray>▶ Schreibe <red>'abbruch'</red>, um abzubrechen.</gray>"
+            ));
+
+            close();
+            GuiSoundUtil.playSuccess(player);
+        });
     }
 
     private PhantomGuiItem buildActiveItem(PlaybackSessionModel session) {
         ItemStack infoItemStack = session.active() ? new ItemStack(Material.GREEN_DYE) : new ItemStack(Material.RED_DYE);
-
         infoItemStack.editMeta(meta -> {
             meta.displayName(MM.deserialize("<gradient:#660000:#8b3a00><bold>Aktivitätsstatus</bold></gradient>"));
             meta.lore(List.of(

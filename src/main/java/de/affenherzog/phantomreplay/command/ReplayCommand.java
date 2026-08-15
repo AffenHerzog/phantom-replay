@@ -143,18 +143,20 @@ public class ReplayCommand implements PhantomCommand {
 
     private int executeRename(CommandContext<CommandSourceStack> context) {
         Player player = (Player) context.getSource().getSender();
-        String replayName = StringArgumentType.getString(context, REPLAY_NAME_ARGUMENT);
+        String oldName = StringArgumentType.getString(context, REPLAY_NAME_ARGUMENT);
         String newName = StringArgumentType.getString(context, "new_name");
 
-        Replay replay = getReplayOrSendError(player, replayName);
+        Replay replay = getReplayOrSendError(player, oldName);
         if (replay == null) return 0;
 
-        replayManagementService.renameReplay(replay, player.getUniqueId(), newName).ifPresentOrElse(_ ->
-                        player.sendMessage(MM.deserialize("<green>Replay <yellow>" + replayName + "</yellow> erfolgreich zu <gold>" + newName + "</gold> umbenannt.")),
-                () ->
-                        player.sendMessage(MM.deserialize("<red>Der Replayname konnte nicht geändert werden <yellow>"))
-        );
+        ReplayManagementService.RenameResult renameResult = replayManagementService.renameReplay(replay, player.getUniqueId(), newName);
 
+        if (renameResult == ReplayManagementService.RenameResult.SUCCESS) {
+            player.sendMessage(renameResult.getMessageComponent(oldName, newName));
+            return Command.SINGLE_SUCCESS;
+        }
+
+        player.sendMessage(renameResult.getMessageComponent());
         return Command.SINGLE_SUCCESS;
     }
 

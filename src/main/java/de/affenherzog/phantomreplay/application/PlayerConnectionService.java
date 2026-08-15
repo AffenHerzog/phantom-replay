@@ -31,6 +31,7 @@ public class PlayerConnectionService {
     private final PhantomPlayerManager phantomPlayerManager;
     private final PlaybackManager playbackManager;
     private final RecordingManager recordingManager;
+    private final ReplayManagementService replayManagementService;
 
 
     public void loadPlayerData(UUID uuid) {
@@ -69,6 +70,7 @@ public class PlayerConnectionService {
     public void logout(UUID uuid) {
         recordingManager.stopRecording(uuid);
         playbackManager.removeAllSessions(uuid);
+        replayManagementService.removeRenaming(uuid);
         phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(
                 (_ -> phantomPlayerManager.removePhantomPlayer(uuid)));
     }
