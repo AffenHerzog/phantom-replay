@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static de.affenherzog.phantomreplay.gui.item.PhantomGuiItemFactory.*;
+import static de.affenherzog.phantomreplay.gui.playback.PlaybackGuiService.COOLDOWN_TIME_TICKS;
 import static de.affenherzog.phantomreplay.util.MUtil.MM;
 
 public class PlaybackDetailedGui extends PhantomGui {
@@ -28,6 +29,10 @@ public class PlaybackDetailedGui extends PhantomGui {
             MM.deserialize("<gradient:#660000:#8b3a00><bold>Aufnahme</bold></gradient>");
 
     private static final Component CENTERED_GUI_TITLE = GuiTitleUtil.centerTitle(TITLE, "Aufnahme");
+
+    private static final Material ACTIVE_MATERIAL = Material.GREEN_DYE;
+    private static final Material INACTIVE_MATERIAL = Material.RED_DYE;
+    private static final Material VISIBILITY_MATERIAL = Material.ENDER_PEARL;
 
     private final PlaybackManager playbackManager;
     private final ReplayManagementService replayManagementService;
@@ -83,7 +88,7 @@ public class PlaybackDetailedGui extends PhantomGui {
     }
 
     private PhantomGuiItem buildActiveItem(PlaybackSessionModel session) {
-        ItemStack infoItemStack = session.active() ? new ItemStack(Material.GREEN_DYE) : new ItemStack(Material.RED_DYE);
+        ItemStack infoItemStack = session.active() ? new ItemStack(ACTIVE_MATERIAL) : new ItemStack(INACTIVE_MATERIAL);
         infoItemStack.editMeta(meta -> {
             meta.displayName(MM.deserialize("<gradient:#660000:#8b3a00><bold>Aktivitätsstatus</bold></gradient>"));
             meta.lore(List.of(
@@ -95,6 +100,9 @@ public class PlaybackDetailedGui extends PhantomGui {
         });
 
         return new PhantomGuiItem(infoItemStack, () -> {
+            if (!activateCooldown()) {
+                return;
+            }
             PlaybackSessionModel newSession = session.withActive(!session.active());
             playbackManager.updateActiveSession(session.replay().id(), newSession.active());
             playbackGuiService.openPlaybackDetailedGui(playerUUID, newSession);
@@ -103,7 +111,7 @@ public class PlaybackDetailedGui extends PhantomGui {
     }
 
     private PhantomGuiItem buildVisibilityItem(PlaybackSessionModel session) {
-        ItemStack infoItemStack = new ItemStack(Material.ENDER_EYE);
+        ItemStack infoItemStack = new ItemStack(VISIBILITY_MATERIAL);
         infoItemStack.editMeta(meta -> {
             meta.displayName(MM.deserialize("<gradient:#660000:#8b3a00><bold>Sichbarkeit</bold></gradient>"));
             meta.lore(List.of(
@@ -115,6 +123,9 @@ public class PlaybackDetailedGui extends PhantomGui {
         });
 
         return new PhantomGuiItem(infoItemStack, () -> {
+            if (!activateCooldown()) {
+                return;
+            }
             PlaybackSessionModel newSession = session.withVisibilityScope(session.visibilityScope() == VisibilityScope.PRIVAT ? VisibilityScope.GLOBAL : VisibilityScope.PRIVAT);
             playbackManager.updateVisibilitySession(session.replay().id(), newSession.visibilityScope());
             playbackGuiService.openPlaybackDetailedGui(playerUUID, newSession);
@@ -140,6 +151,18 @@ public class PlaybackDetailedGui extends PhantomGui {
             playbackGuiService.openPlaybackGui(playerUUID);
             GuiSoundUtil.playSuccess(getPlayer());
         });
+    }
+
+    private boolean activateCooldown() {
+        if (playbackGuiService.isOnCooldown(playerUUID)) {
+            return false;
+        }
+        playbackGuiService.setCooldown(playerUUID);
+        Material[] material = {ACTIVE_MATERIAL, INACTIVE_MATERIAL, VISIBILITY_MATERIAL};
+        for (Material m : material) {
+            getPlayer().setCooldown(m, COOLDOWN_TIME_TICKS);
+        }
+        return true;
     }
 
     @Override

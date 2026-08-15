@@ -1,7 +1,6 @@
 package de.affenherzog.phantomreplay.gui.playback;
 
 import de.affenherzog.phantomreplay.gui.item.PhantomGuiItem;
-import de.affenherzog.phantomreplay.gui.util.GuiSoundUtil;
 import de.affenherzog.phantomreplay.gui.util.GuiTitleUtil;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackStats;
@@ -24,6 +23,9 @@ public class PlaybackVisibilityGui extends AbstractPlaybackModifyAllGui {
 
     private static final Component CENTERED_GUI_TITLE = GuiTitleUtil.centerTitle(TITLE, "Sichtbarkeit ändern");
 
+    private static final Material PRIVATE_MATERIAL = Material.ENDER_PEARL;
+    private static final Material PUBLIC_MATERIAL = Material.ENDER_EYE;
+
     public PlaybackVisibilityGui(Plugin plugin, UUID playerUUID, PlaybackStats playbackStats, PlaybackManager playbackManager, PlaybackGuiService playbackGuiService) {
         super(plugin, playerUUID, CENTERED_GUI_TITLE, playbackGuiService, playbackManager, playbackStats);
     }
@@ -36,7 +38,7 @@ public class PlaybackVisibilityGui extends AbstractPlaybackModifyAllGui {
     }
 
     private PhantomGuiItem buildPrivateVisibilityReplays(int affectedReplays) {
-        ItemStack itemStack = new ItemStack(Material.ENDER_PEARL);
+        ItemStack itemStack = new ItemStack(PRIVATE_MATERIAL);
 
         List<Component> lore = new ArrayList<>(List.of(
                 Component.empty(),
@@ -58,20 +60,11 @@ public class PlaybackVisibilityGui extends AbstractPlaybackModifyAllGui {
             meta.lore(lore);
         });
 
-        return new PhantomGuiItem(itemStack, () -> {
-            if (affectedReplays == 0) {
-                playbackGuiService.openPlaybackGui(playerUUID);
-                GuiSoundUtil.playWarning(getPlayer());
-                return;
-            }
-            playbackManager.updateVisibilitySession(playerUUID, VisibilityScope.PRIVAT);
-            playbackGuiService.openPlaybackGui(playerUUID);
-            GuiSoundUtil.playSuccess(getPlayer());
-        });
+        return new PhantomGuiItem(itemStack, createToggleVisibility(affectedReplays, VisibilityScope.PRIVAT));
     }
 
     private PhantomGuiItem buildPublicVisibilityReplays(int affectedReplays) {
-        ItemStack itemStack = new ItemStack(Material.ENDER_EYE);
+        ItemStack itemStack = new ItemStack(PUBLIC_MATERIAL);
 
         List<Component> lore = new ArrayList<>(List.of(
                 Component.empty(),
@@ -93,16 +86,15 @@ public class PlaybackVisibilityGui extends AbstractPlaybackModifyAllGui {
             meta.lore(lore);
         });
 
-        return new PhantomGuiItem(itemStack, () -> {
-            if (affectedReplays == 0) {
-                playbackGuiService.openPlaybackGui(playerUUID);
-                GuiSoundUtil.playWarning(getPlayer());
-                return;
-            }
-            playbackManager.updateVisibilitySession(playerUUID, VisibilityScope.GLOBAL);
-            playbackGuiService.openPlaybackGui(playerUUID);
-            GuiSoundUtil.playSuccess(getPlayer());
-        });
+        return new PhantomGuiItem(itemStack, createToggleVisibility(affectedReplays, VisibilityScope.GLOBAL));
+    }
+
+    private Runnable createToggleVisibility(int affectedReplays, VisibilityScope targetState) {
+        return createToggle(
+                affectedReplays,
+                PRIVATE_MATERIAL,
+                PUBLIC_MATERIAL,
+                () -> playbackManager.updateVisibilitySession(playerUUID, targetState));
     }
 
 }

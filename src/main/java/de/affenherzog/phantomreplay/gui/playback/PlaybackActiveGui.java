@@ -1,7 +1,6 @@
 package de.affenherzog.phantomreplay.gui.playback;
 
 import de.affenherzog.phantomreplay.gui.item.PhantomGuiItem;
-import de.affenherzog.phantomreplay.gui.util.GuiSoundUtil;
 import de.affenherzog.phantomreplay.gui.util.GuiTitleUtil;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackStats;
@@ -23,6 +22,9 @@ public class PlaybackActiveGui extends AbstractPlaybackModifyAllGui {
 
     private static final Component CENTERED_GUI_TITLE = GuiTitleUtil.centerTitle(TITLE, "Aktivität ändern");
 
+    private static final Material ACTIVATE_MATERIAL = Material.LIME_WOOL;
+    private static final Material DEACTIVATE_MATERIAL = Material.RED_WOOL;
+
     public PlaybackActiveGui(Plugin plugin, UUID playerUUID, PlaybackStats playbackStats, PlaybackManager playbackManager, PlaybackGuiService playbackGuiService) {
         super(plugin, playerUUID, CENTERED_GUI_TITLE, playbackGuiService, playbackManager, playbackStats);
     }
@@ -35,7 +37,7 @@ public class PlaybackActiveGui extends AbstractPlaybackModifyAllGui {
     }
 
     private PhantomGuiItem buildActivateAllReplays(int affectedReplays) {
-        ItemStack itemStack = new ItemStack(Material.LIME_WOOL);
+        ItemStack itemStack = new ItemStack(ACTIVATE_MATERIAL);
 
         List<Component> lore = new ArrayList<>(List.of(
                 Component.empty(),
@@ -57,27 +59,18 @@ public class PlaybackActiveGui extends AbstractPlaybackModifyAllGui {
             meta.lore(lore);
         });
 
-        return new PhantomGuiItem(itemStack, () -> {
-            if (affectedReplays == 0) {
-                playbackGuiService.openPlaybackGui(playerUUID);
-                GuiSoundUtil.playWarning(getPlayer());
-                return;
-            }
-            playbackManager.updateActiveSession(playerUUID, true);
-            playbackGuiService.openPlaybackGui(playerUUID);
-            GuiSoundUtil.playSuccess(getPlayer());
-        });
+        return new PhantomGuiItem(itemStack, createToggleAction(affectedReplays, true));
     }
 
     private PhantomGuiItem buildDeactivateAllReplays(int affectedReplays) {
-        ItemStack itemStack = new ItemStack(Material.RED_WOOL);
+        ItemStack itemStack = new ItemStack(DEACTIVATE_MATERIAL);
 
         List<Component> lore = new ArrayList<>(List.of(
                 Component.empty(),
                 MM.deserialize("<gray>Stoppt alle laufenden Replays sofort.</gray>"),
                 Component.empty(),
-                MM.deserialize("<gray>Aktuell aktiv: <yellow>"+affectedReplays +"</yellow></gray>"),
-                MM.deserialize("<gray>Aktion ändert: <yellow>"+affectedReplays +" Replays</yellow></gray>")
+                MM.deserialize("<gray>Aktuell aktiv: <yellow>" + affectedReplays + "</yellow></gray>"),
+                MM.deserialize("<gray>Aktion ändert: <yellow>" + affectedReplays + " Replays</yellow></gray>")
         ));
 
         if (affectedReplays != 0) {
@@ -92,16 +85,16 @@ public class PlaybackActiveGui extends AbstractPlaybackModifyAllGui {
             meta.lore(lore);
         });
 
-        return new PhantomGuiItem(itemStack, () -> {
-            if (affectedReplays == 0) {
-                playbackGuiService.openPlaybackGui(playerUUID);
-                GuiSoundUtil.playWarning(getPlayer());
-                return;
-            }
-            playbackManager.updateActiveSession(playerUUID, false);
-            playbackGuiService.openPlaybackGui(playerUUID);
-            GuiSoundUtil.playSuccess(getPlayer());
-        });
+        return new PhantomGuiItem(itemStack, createToggleAction(affectedReplays, false));
+
+    }
+
+    private Runnable createToggleAction(int affectedReplays, boolean targetState) {
+        return createToggle(
+                affectedReplays,
+                ACTIVATE_MATERIAL,
+                DEACTIVATE_MATERIAL,
+                () -> playbackManager.updateActiveSession(playerUUID, targetState));
     }
 
 }
