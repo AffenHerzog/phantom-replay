@@ -1,17 +1,16 @@
 package de.affenherzog.phantomreplay;
 
 import de.affenherzog.phantomreplay.application.ReplayManagementService;
+import de.affenherzog.phantomreplay.command.GuiReplayCommand;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
-import de.affenherzog.phantomreplay.listener.PlaybackReplaySavedListener;
+import de.affenherzog.phantomreplay.gui.playback.PlaybackGuiService;
+import de.affenherzog.phantomreplay.listener.*;
 import de.affenherzog.phantomreplay.playback.*;
 import de.affenherzog.phantomreplay.record.RecordingScheduler;
-import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
 import de.affenherzog.phantomreplay.application.PlayerConnectionService;
-import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
-import de.affenherzog.phantomreplay.listener.RecordingArmSwingListener;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
@@ -49,6 +48,8 @@ public final class PhantomReplay extends JavaPlugin {
     private PlaybackSessionService playbackSessionService;
     private ReplayManagementService replayManagementService;
 
+    private PlaybackGuiService playbackGuiService;
+
     private Logger log;
     private ComponentLogger componentLogger;
 
@@ -77,6 +78,8 @@ public final class PhantomReplay extends JavaPlugin {
 
         playbackSessionService = new PlaybackSessionService(this, playbackRepository, playbackManager);
         replayManagementService = new ReplayManagementService(phantomPlayerManager, playbackManager, replayRepository);
+
+        playbackGuiService = new PlaybackGuiService(this, playbackManager, replayManagementService);
 
         registerListener();
         registerCommands();
@@ -114,19 +117,22 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
-        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager);
+        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager, replayManagementService);
 
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(playerConnectionService), this);
         pluginManager.registerEvents(new PlayerQuitListener(playerConnectionService), this);
         pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
         pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
+        pluginManager.registerEvents(new InventoryClickListener(), this);
+        pluginManager.registerEvents(new RenamePlaybackChatListener(this, playbackGuiService, replayManagementService), this);
     }
 
     private void registerCommands() {
         List<PhantomCommand> commands = List.of(
                 new RecordCommand(recordingManager),
-                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService)
+                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService),
+                new GuiReplayCommand(phantomPlayerManager, playbackGuiService)
         );
 
         commands.forEach(it ->
@@ -136,7 +142,7 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerScheduler() {
         recordingScheduler.runTaskTimer(this, 0, 1);
-        playbackScheduler.runTaskTimer(this, 0,1);
+        playbackScheduler.runTaskTimer(this, 0, 1);
     }
 
     private void unregisterScheduler() {
