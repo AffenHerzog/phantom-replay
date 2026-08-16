@@ -14,12 +14,15 @@ Damit lassen sich unter anderem PvP-Szenen, belebte Dorfbewohner, Jump & Runs od
 
 Die Steuerung erfolgt über klassische Commands oder bequem über ein In-Game-GUI. Das Menü bietet dir dabei alle Funktionen, die auch der `/replay`-Command abdeckt, und erweitert diese um mächtige Weitere Aktionen: Du kannst nun mit nur einem Klick alle deine Replays gleichzeitig aktivieren/deaktivieren oder die Sichtbarkeit für alle Aufnahmen auf einmal anpassen. Das GUI öffnet sich aktuell über `/playback`.
 
-**Das globale Replay-Menü:**
-![Hauptmenü](assets/images/gui_main_menu.png)
+**Das globale Replay-Menü:**<br>
+<img src="assets/images/gui_main_menu.png" width="500" align="left">
 
-**Die Detailansicht einer einzelnen Aufnahme:**
-![Detailansicht](assets/images/gui_detail_view.png)
+<br clear="all"><br>
 
+**Die Detailansicht einer einzelnen Aufnahme:**<br>
+<img src="assets/images/gui_detail_view.png" width="500" align="left">
+
+<br clear="all">
 ## Aktueller Funktionsumfang
 
 - **Bewegung & Blickrichtung:** Millisekundengenaue Aufzeichnung von Laufwegen und Kopfbewegungen.
