@@ -4,11 +4,7 @@ import de.affenherzog.phantomreplay.replay.Replay;
 import de.affenherzog.phantomreplay.util.MUtil;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
@@ -67,17 +63,41 @@ public class PlaybackManager {
     }
 
     public boolean updateActiveSession(UUID ownerUuid, boolean active) {
-        return sessions.values().stream()
+        List<PlaybackSessionRunner> targetRunners = sessions.values().stream()
                 .filter(it -> it.getOwnerUUID().equals(ownerUuid))
-                .map(PlaybackSessionRunner::getModel)
-                .map(model -> updateActiveSession(model.replay().id(), active))
-                .reduce(false, (a, b) -> a || b);
+                .toList();
+        return updateActiveRunners(targetRunners, active);
     }
 
     public boolean updateActiveSession(int replayId, boolean active) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
-
         if (runner == null) return false;
+
+        if (updateRunnerActivity(runner, active)) {
+            updatePlaybackModelInDatabase(runner.getModel());
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean updateActiveRunners(List<PlaybackSessionRunner> runners, boolean active) {
+        if (runners.isEmpty()) return false;
+
+        List<PlaybackSessionModel> modelsToUpdate = new ArrayList<>();
+
+        for (PlaybackSessionRunner runner : runners) {
+            if (updateRunnerActivity(runner, active)) {
+                modelsToUpdate.add(runner.getModel());
+            }
+        }
+
+        if (modelsToUpdate.isEmpty()) return false;
+        updatePlaybackModelInDatabase(modelsToUpdate);
+        return true;
+    }
+
+    private boolean updateRunnerActivity(PlaybackSessionRunner runner, boolean active) {
         if (active == runner.isActive()) return false;
 
         runner.modifyActive(active);
@@ -85,31 +105,51 @@ public class PlaybackManager {
         if (active) {
             playbackScheduler.addPlaybackSession(runner);
         } else {
-            playbackScheduler.removePlaybackSession(replayId);
+            playbackScheduler.removePlaybackSession(runner.getReplayId());
         }
-
-        updatePlaybackModelInDatabase(runner.getModel());
 
         return true;
     }
 
     public boolean updateVisibilitySession(UUID ownerUuid, VisibilityScope scope) {
-        return sessions.values().stream()
+        List<PlaybackSessionRunner> targetRunners = sessions.values().stream()
                 .filter(it -> it.getOwnerUUID().equals(ownerUuid))
-                .map(PlaybackSessionRunner::getModel)
-                .map(model -> updateVisibilitySession(model.replay().id(), scope))
-                .reduce(false, (a, b) -> a || b);
+                .toList();
+        return updateVisibilityRunners(targetRunners, scope);
     }
 
     public boolean updateVisibilitySession(int replayId, VisibilityScope scope) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
-
         if (runner == null) return false;
-        if (scope == runner.getVisibilityScope()) return false;
 
+        if (updateRunnerVisibility(runner, scope)) {
+            updatePlaybackModelInDatabase(runner.getModel());
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean updateVisibilityRunners(List<PlaybackSessionRunner> runners, VisibilityScope scope) {
+        if (runners.isEmpty()) return false;
+
+        List<PlaybackSessionModel> modelsToUpdate = new ArrayList<>();
+
+        for (PlaybackSessionRunner runner : runners) {
+            if (updateRunnerVisibility(runner, scope)) {
+                modelsToUpdate.add(runner.getModel());
+            }
+        }
+
+        if (modelsToUpdate.isEmpty()) return false;
+
+        updatePlaybackModelInDatabase(modelsToUpdate);
+        return true;
+    }
+
+    private boolean updateRunnerVisibility(PlaybackSessionRunner runner, VisibilityScope scope) {
+        if (scope == runner.getModel().visibilityScope()) return false;
         runner.modifyVisibility(scope);
-        updatePlaybackModelInDatabase(runner.getModel());
-
         return true;
     }
 
@@ -123,6 +163,10 @@ public class PlaybackManager {
     }
 
     public void updatePlaybackModelInDatabase(PlaybackSessionModel model) {
+        playbackRepository.updatePlaybackSession(model);
+    }
+
+    public void updatePlaybackModelInDatabase(List<PlaybackSessionModel> model) {
         playbackRepository.updatePlaybackSession(model);
     }
 
