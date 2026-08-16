@@ -42,24 +42,28 @@ public class RenamePlaybackChatListener implements Listener {
 
         if (newName.equalsIgnoreCase("abbruch")) {
             replayManagementService.removeRenaming(uuid);
-            event.getPlayer().sendMessage(MM.deserialize("<red>Umbenennen abgebrochen.</red>"));
+            player.sendMessage(MM.deserialize("<red>Umbenennen abgebrochen.</red>"));
             Bukkit.getScheduler().runTask(plugin, () -> menuService.openPlaybackGui(uuid));
             return;
         }
 
         Replay replay = replayManagementService.getRenaming(uuid);
         if (replay == null) return;
-        ReplayManagementService.RenameResult renameResult = replayManagementService.renameReplay(replay, uuid, newName);
 
-        if (renameResult != ReplayManagementService.RenameResult.SUCCESS) {
-            player.sendMessage(renameResult.getMessageComponent());
-            return;
-        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            ReplayManagementService.RenameResult renameResult = replayManagementService.renameReplay(replay, uuid, newName);
 
-        replayManagementService.removeRenaming(uuid);
-        Bukkit.getScheduler().runTask(plugin, () -> menuService.openPlaybackGui(uuid));
-        event.getPlayer().sendMessage(renameResult.getMessageComponent(replay.name(), newName));
-        GuiSoundUtil.playSuccess(player);
+            if (renameResult != ReplayManagementService.RenameResult.SUCCESS) {
+                player.sendMessage(renameResult.getMessageComponent());
+                return;
+            }
+
+            replayManagementService.removeRenaming(uuid);
+            menuService.openPlaybackGui(uuid);
+            GuiSoundUtil.playSuccess(player);
+            player.sendMessage(renameResult.getMessageComponent(replay.name(), newName));
+        });
+
     }
 
 }
