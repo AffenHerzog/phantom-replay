@@ -23,6 +23,7 @@ Die Steuerung erfolgt über klassische Commands oder bequem über ein In-Game-GU
 <img src="assets/images/gui_detail_view.png" width="500" align="left">
 
 <br clear="all">
+
 ## Aktueller Funktionsumfang
 
 - **Bewegung & Blickrichtung:** Millisekundengenaue Aufzeichnung von Laufwegen und Kopfbewegungen.
