@@ -1,12 +1,8 @@
 # PhantomReplay 👻
 
-Hauche deiner Minecraft-Welt Leben ein! 
-PhantomReplay ist ein Paper-Plugin, das deine Bewegungen und 
-Aktionen aufzeichnet und sie als lebensechte NPC-Phantome wieder abspielt.
+Hauche deiner Minecraft-Welt Leben ein! PhantomReplay ist ein Paper-Plugin, das deine Bewegungen und Aktionen aufzeichnet und sie als lebensechte NPC-Phantome wieder abspielt.
 
-Egal ob du PvP-Kämpfe nachstellen 🥊, Tutorials kreieren 📖, komplexe Parkour-Geister erschaffen 🦘
-oder einfach deine Server-Lobby mit realistischen Hintergrundcharakteren 🤡 beleben möchtest 
-– 👻 PhantomReplay macht es möglich.
+Egal ob du PvP-Kämpfe nachstellen 🥊, Tutorials kreieren 📖, komplexe Parkour-Geister erschaffen 🦘 oder einfach deine Server-Lobby mit realistischen Hintergrundcharakteren 🤡 beleben möchtest – 👻 PhantomReplay macht es möglich.
 
 Der Schwerpunkt des Plugins liegt auf drei Dingen:
 
@@ -16,7 +12,13 @@ Der Schwerpunkt des Plugins liegt auf drei Dingen:
 
 Damit lassen sich unter anderem PvP-Szenen, belebte Dorfbewohner, Jump & Runs oder andere atmosphärische Situationen simulieren.
 
-Aktuell ist die Steuerung noch command-basiert. Ein GUI ist als nächster Schritt geplant.
+Die Steuerung erfolgt über klassische Commands oder bequem über ein In-Game-GUI. Das Menü bietet dir dabei alle Funktionen, die auch der `/replay`-Command abdeckt, und erweitert diese um mächtige Weitere Aktionen: Du kannst nun mit nur einem Klick alle deine Replays gleichzeitig aktivieren/deaktivieren oder die Sichtbarkeit für alle Aufnahmen auf einmal anpassen. Das GUI öffnet sich aktuell über `/playback`.
+
+**Das globale Replay-Menü:**
+![Hauptmenü](assets/images/gui_main_menu.png)
+
+**Die Detailansicht einer einzelnen Aufnahme:**
+![Detailansicht](assets/images/gui_detail_view.png)
 
 ## Aktueller Funktionsumfang
 
@@ -25,6 +27,7 @@ Aktuell ist die Steuerung noch command-basiert. Ein GUI ist als nächster Schrit
 - **Simultane Wiedergabe:** Lass mehrere Replays gleichzeitig abspielen, um Interaktionen zwischen verschiedenen Phantomen zu erzeugen.
 - **Sichtbarkeits-Modi:** Bestimme über GLOBAL oder PRIVAT, ob jeder Spieler das Replay sehen darf oder nur du selbst.
 - **Packet-basierte NPCs:** Die Replays existieren nicht als physische Entities auf dem Server, was massiv Leistung spart.
+- **Intuitives GUI-Management:** Verwalte alle deine Aufnahmen zentral über ein Menü, navigiere in spezifische Detailansichten pro Replay oder steuere Aufnahmen gleichzeitig über die globalen Toggles.
 
 ## Commands
 
@@ -37,8 +40,7 @@ Startet und stoppt eine Aufnahme.
 /record stop
 ```
 
-Mit `start` beginnt die Aufnahme des aktuellen Spielers.
-Mit `stop` wird die Aufnahme gespeichert und als Replay angelegt.
+Mit `start` beginnt die Aufnahme des aktuellen Spielers. Mit `stop` wird die Aufnahme gespeichert und als Replay angelegt.
 
 ### `/replay <name>`
 
@@ -66,6 +68,7 @@ Ohne Unterbefehl zeigt der Command eine Info über das Replay an:
 - `phantomreplay.replay.visibility`
 - `phantomreplay.replay.rename`
 - `phantomreplay.replay.delete`
+- `phantomreplay.gui.playback`
 
 ## Konfiguration
 
@@ -95,11 +98,9 @@ Das Plugin nutzt:
 
 Die Replay-Daten werden serverseitig gespeichert und beim Join wieder geladen. Für die Darstellung werden echte Spielerdaten nicht als echte Spielerinstanzen eingeblendet, sondern als packetbasierte NPCs simuliert.
 
+## Geplante Features 👀
 
-##  Geplante Features 👀
-
-- **GUI-Management:** Ein intuitives Inventar-Menü zur einfachen Verwaltung aller Replays.
 - **Aufnahme-HUD:** Bessere visuelle Darstellung der laufenden Aufnahmedauer und Restzeit über die Actionbar.
-- **Countdown**: Ein Timer vor dem Startschuss einer Aufnahme.
+- **Countdown:** Ein Timer vor dem Startschuss einer Aufnahme.
 - **Erweitertes Tracking:** Aufzeichnung zusätzlicher Interaktionen (Kisten öffnen, Fernrohr-Nutzung, Essen-Animationen, etc.).
 - **Custom NPCs:** Zuweisung von eigenen Spielernamen, Nametags und individuellen Skins für die abgespielten Phantome.
