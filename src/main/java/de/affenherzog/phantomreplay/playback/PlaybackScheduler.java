@@ -1,19 +1,17 @@
 package de.affenherzog.phantomreplay.playback;
 
+import lombok.RequiredArgsConstructor;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Map;
 
+@RequiredArgsConstructor
 public class PlaybackScheduler extends BukkitRunnable {
 
     private final Map<Integer, PlaybackSessionRunner> playbackSessions;
 
-    public PlaybackScheduler(Map<Integer, PlaybackSessionRunner> playbackSessions) {
-        this.playbackSessions = playbackSessions;
-    }
-
     public void addPlaybackSession(PlaybackSessionRunner playbackSessionRunner) {
-        int id = playbackSessionRunner.getModel().replay().id();
+        int id = playbackSessionRunner.getReplayId();
         playbackSessions.put(id, playbackSessionRunner);
     }
 

@@ -1,15 +1,16 @@
 package de.affenherzog.phantomreplay;
 
+import de.affenherzog.phantomreplay.application.ReplayManagementService;
+import de.affenherzog.phantomreplay.command.GuiReplayCommand;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
-import de.affenherzog.phantomreplay.listener.PlayerJoinListener;
-import de.affenherzog.phantomreplay.listener.PlayerQuitListener;
-import de.affenherzog.phantomreplay.listener.PlayerSwingArmListener;
-import de.affenherzog.phantomreplay.listener.ReplaySavedListener;
-import de.affenherzog.phantomreplay.playback.PlaybackManager;
-import de.affenherzog.phantomreplay.playback.PlaybackRepository;
+import de.affenherzog.phantomreplay.gui.playback.PlaybackGuiService;
+import de.affenherzog.phantomreplay.listener.*;
+import de.affenherzog.phantomreplay.playback.*;
+import de.affenherzog.phantomreplay.record.RecordingScheduler;
+import de.affenherzog.phantomreplay.application.PlayerConnectionService;
 import de.affenherzog.phantomreplay.player.PhantomPlayerManager;
 import de.affenherzog.phantomreplay.player.PlayerRepository;
 import de.affenherzog.phantomreplay.record.RecordingManager;
@@ -23,6 +24,7 @@ import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PhantomReplay extends JavaPlugin {
 
@@ -31,13 +33,22 @@ public final class PhantomReplay extends JavaPlugin {
     private DatabaseManager databaseManager;
 
     private ReplayRepository replayRepository;
+
+    private RecordingScheduler recordingScheduler;
     private RecordingManager recordingManager;
 
+    private PlaybackScheduler playbackScheduler;
     private PlaybackManager playbackManager;
     private PlaybackRepository playbackRepository;
 
+
     private PlayerRepository playerRepository;
     private PhantomPlayerManager phantomPlayerManager;
+
+    private PlaybackSessionService playbackSessionService;
+    private ReplayManagementService replayManagementService;
+
+    private PlaybackGuiService playbackGuiService;
 
     private Logger log;
     private ComponentLogger componentLogger;
@@ -58,33 +69,29 @@ public final class PhantomReplay extends JavaPlugin {
         playerRepository = new PlayerRepository(databaseManager.getDataSource(), componentLogger);
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
-        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository);
+        recordingScheduler = new RecordingScheduler(new ConcurrentHashMap<>());
+        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, recordingScheduler);
 
+        playbackScheduler = new PlaybackScheduler(new ConcurrentHashMap<>());
         playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
-        playbackManager = new PlaybackManager(this, playbackRepository);
+        playbackManager = new PlaybackManager(playbackScheduler, playbackRepository);
+
+        playbackSessionService = new PlaybackSessionService(this, playbackRepository, playbackManager);
+        replayManagementService = new ReplayManagementService(phantomPlayerManager, playbackManager, replayRepository);
+
+        playbackGuiService = new PlaybackGuiService(this, playbackManager, replayManagementService);
 
         registerListener();
         registerCommands();
+        registerScheduler();
 
         log.info("PhantomReplay wurde erfolgreich gestartet.");
     }
 
-    private void registerCommands() {
-        List<PhantomCommand> commands = List.of(
-                new RecordCommand(recordingManager),
-                new ReplayCommand(playbackManager, replayRepository, phantomPlayerManager)
-        );
-
-        commands.forEach(it ->
-                this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
-                        event -> event.registrar().register(it.build())));
-    }
-
     @Override
     public void onDisable() {
-        if (databaseManager != null) {
-            databaseManager.disconnect();
-        }
+        if (databaseManager != null) databaseManager.disconnect();
+        unregisterScheduler();
     }
 
     private boolean setupDatabase() {
@@ -110,10 +117,36 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
+        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager, replayManagementService);
+
         PluginManager pluginManager = getServer().getPluginManager();
-        pluginManager.registerEvents(new PlayerJoinListener(this, phantomPlayerManager, replayRepository, playerRepository, playbackRepository, playbackManager), this);
-        pluginManager.registerEvents(new PlayerQuitListener(phantomPlayerManager, recordingManager, playbackManager), this);
-        pluginManager.registerEvents(new PlayerSwingArmListener(recordingManager), this);
-        pluginManager.registerEvents(new ReplaySavedListener(this, playbackRepository, playbackManager), this);
+        pluginManager.registerEvents(new PlayerJoinListener(playerConnectionService), this);
+        pluginManager.registerEvents(new PlayerQuitListener(playerConnectionService), this);
+        pluginManager.registerEvents(new RecordingArmSwingListener(recordingManager), this);
+        pluginManager.registerEvents(new PlaybackReplaySavedListener(playbackSessionService), this);
+        pluginManager.registerEvents(new InventoryClickListener(), this);
+        pluginManager.registerEvents(new RenamePlaybackChatListener(this, playbackGuiService, replayManagementService), this);
+    }
+
+    private void registerCommands() {
+        List<PhantomCommand> commands = List.of(
+                new RecordCommand(recordingManager),
+                new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService),
+                new GuiReplayCommand(phantomPlayerManager, playbackGuiService)
+        );
+
+        commands.forEach(it ->
+                this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS,
+                        event -> event.registrar().register(it.build())));
+    }
+
+    private void registerScheduler() {
+        recordingScheduler.runTaskTimer(this, 0, 1);
+        playbackScheduler.runTaskTimer(this, 0, 1);
+    }
+
+    private void unregisterScheduler() {
+        if (recordingScheduler != null) recordingScheduler.cancel();
+        if (playbackScheduler != null) playbackScheduler.cancel();
     }
 }

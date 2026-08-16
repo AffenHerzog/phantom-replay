@@ -41,6 +41,38 @@ public class PlaybackRepository extends AbstractRepository {
         });
     }
 
+    public CompletableFuture<Void> updatePlaybackSession(List<PlaybackSessionModel> models) {
+        return CompletableFuture.runAsync(() -> {
+            if (models == null || models.isEmpty()) {
+                return;
+            }
+
+            String sql = "UPDATE playback_session SET active = ?, scope = ? WHERE id = ?";
+
+            try (Connection conn = getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+                boolean originalAutoCommit = conn.getAutoCommit();
+                conn.setAutoCommit(false);
+
+                for (PlaybackSessionModel model : models) {
+                    stmt.setBoolean(1, model.active());
+                    stmt.setString(2, model.visibilityScope().name());
+                    stmt.setInt(3, model.id());
+
+                    stmt.addBatch();
+                }
+
+                stmt.executeBatch();
+                conn.commit();
+                conn.setAutoCommit(originalAutoCommit);
+
+            } catch (SQLException e) {
+                logError("Fehler beim Aktualisieren der Playback-Sitzungen (Menge: {})", models.size(), e);
+            }
+        });
+    }
+
     public CompletableFuture<List<PlaybackSessionModel>> loadAllPlaybackSessions(Map<Integer, Replay> availableReplays) {
         return CompletableFuture.supplyAsync(() -> {
             List<PlaybackSessionModel> sessions = new ArrayList<>();

@@ -1,17 +1,15 @@
 package de.affenherzog.phantomreplay.record;
 
+import lombok.RequiredArgsConstructor;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Map;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class RecordingScheduler extends BukkitRunnable {
 
     private final Map<UUID, Recording> currentActiveRecordings;
-
-    public RecordingScheduler(Map<UUID, Recording> currentActiveRecordings) {
-        this.currentActiveRecordings = currentActiveRecordings;
-    }
 
     public boolean isRecording(UUID uuid) {
         return currentActiveRecordings.containsKey(uuid);

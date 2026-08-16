@@ -2,142 +2,202 @@ package de.affenherzog.phantomreplay.playback;
 
 import de.affenherzog.phantomreplay.replay.Replay;
 import de.affenherzog.phantomreplay.util.MUtil;
-import lombok.Getter;
-import org.bukkit.plugin.Plugin;
+import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@RequiredArgsConstructor
 public class PlaybackManager {
 
-    private final Plugin plugin;
     private final PlaybackScheduler playbackScheduler;
     private final PlaybackRepository playbackRepository;
 
-    @Getter
     private final Map<Integer, PlaybackSessionRunner> sessions = new ConcurrentHashMap<>();
 
-    public PlaybackManager(Plugin plugin, PlaybackRepository playbackRepository) {
-        this.plugin = plugin;
-        this.playbackRepository = playbackRepository;
-        this.playbackScheduler = new PlaybackScheduler(new ConcurrentHashMap<>());
-
-        startScheduler();
+    public void registerSessions(List<PlaybackSessionRunner> sessionsToAdd) {
+        sessionsToAdd.forEach(this::registerSession);
     }
 
-    public void addSessions(List<PlaybackSessionRunner> sessionsToAdd) {
-        sessionsToAdd.forEach(this::addSession);
-    }
+    public void registerSession(PlaybackSessionRunner sessionToAdd) {
+        sessions.put(sessionToAdd.getReplayId(), sessionToAdd);
 
-    public void addSession(PlaybackSessionRunner sessionToAdd) {
-        sessions.put(sessionToAdd.getModel().id(), sessionToAdd);
-
-        if (sessionToAdd.getModel().active()) {
-            play(sessionToAdd);
+        if (sessionToAdd.isActive()) {
+            playbackScheduler.addPlaybackSession(sessionToAdd);
         }
+    }
+
+    public List<PlaybackSessionModel> getSessions(UUID ownerUuid) {
+        return sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .map(PlaybackSessionRunner::getModel)
+                .toList();
+    }
+
+    public Optional<PlaybackSessionModel> findSessionModelByReplayId(int replayId) {
+        return Optional.ofNullable(findSessionByReplayId(replayId)).map(PlaybackSessionRunner::getModel);
     }
 
     private PlaybackSessionRunner findSessionByReplayId(int replayId) {
-        return sessions.values().stream()
-                .filter(session -> session.getModel().replay().id() == replayId)
-                .findFirst()
-                .orElse(null);
+        return sessions.get(replayId);
     }
 
-    public Optional<PlaybackSessionModel> getSessionModelByReplayId(int replayId) {
-        return Optional.ofNullable(findSessionByReplayId(replayId))
-                .map(PlaybackSessionRunner::getModel);
-    }
-
-    public void removeAll(UUID ownerUuid) {
+    public void removeAllSessions(UUID ownerUuid) {
         List<Integer> idsToRemove = new ArrayList<>();
 
-        for (PlaybackSessionRunner session : sessions.values()) {
-            if (session.getModel().replay().uuid().equals(ownerUuid)) {
-                idsToRemove.add(session.getModel().id());
-                session.getAnimator().despawnAll();
-                stop(session.getModel().replay().id());
+        sessions.values().forEach(session -> {
+            if (session.getOwnerUUID().equals(ownerUuid)) {
+                idsToRemove.add(session.getReplayId());
+                session.despawn();
+                playbackScheduler.removePlaybackSession(session.getReplayId());
             }
-        }
+        });
 
-        for (Integer id : idsToRemove) {
-            sessions.remove(id);
-        }
+        idsToRemove.forEach(sessions::remove);
     }
 
     public void loadReplayIntoSession(int id, Replay replay) {
         PlaybackSessionRunner runner = findSessionByReplayId(id);
         if (runner == null) return;
-        runner.setModel(runner.getModel().withReplay(replay));
+        runner.updateReplay(replay);
+    }
+
+    public boolean updateActiveSession(UUID ownerUuid, boolean active) {
+        List<PlaybackSessionRunner> targetRunners = sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .toList();
+        return updateActiveRunners(targetRunners, active);
     }
 
     public boolean updateActiveSession(int replayId, boolean active) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
-
         if (runner == null) return false;
-        if (active == runner.getModel().active()) return false;
+
+        if (updateRunnerActivity(runner, active)) {
+            updatePlaybackModelInDatabase(runner.getModel());
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean updateActiveRunners(List<PlaybackSessionRunner> runners, boolean active) {
+        if (runners.isEmpty()) return false;
+
+        List<PlaybackSessionModel> modelsToUpdate = new ArrayList<>();
+
+        for (PlaybackSessionRunner runner : runners) {
+            if (updateRunnerActivity(runner, active)) {
+                modelsToUpdate.add(runner.getModel());
+            }
+        }
+
+        if (modelsToUpdate.isEmpty()) return false;
+        updatePlaybackModelInDatabase(modelsToUpdate);
+        return true;
+    }
+
+    private boolean updateRunnerActivity(PlaybackSessionRunner runner, boolean active) {
+        if (active == runner.isActive()) return false;
 
         runner.modifyActive(active);
 
         if (active) {
-            play(runner);
+            playbackScheduler.addPlaybackSession(runner);
         } else {
-            stop(replayId);
+            playbackScheduler.removePlaybackSession(runner.getReplayId());
         }
 
-        updatePlaybackModelInDatabase(runner.getModel());
-
         return true;
+    }
+
+    public boolean updateVisibilitySession(UUID ownerUuid, VisibilityScope scope) {
+        List<PlaybackSessionRunner> targetRunners = sessions.values().stream()
+                .filter(it -> it.getOwnerUUID().equals(ownerUuid))
+                .toList();
+        return updateVisibilityRunners(targetRunners, scope);
     }
 
     public boolean updateVisibilitySession(int replayId, VisibilityScope scope) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
-
         if (runner == null) return false;
-        if (scope == runner.getModel().visibilityScope()) return false;
 
-        runner.modifyVisibility(scope);
-        updatePlaybackModelInDatabase(runner.getModel());
+        if (updateRunnerVisibility(runner, scope)) {
+            updatePlaybackModelInDatabase(runner.getModel());
+            return true;
+        }
 
+        return false;
+    }
+
+    private boolean updateVisibilityRunners(List<PlaybackSessionRunner> runners, VisibilityScope scope) {
+        if (runners.isEmpty()) return false;
+
+        List<PlaybackSessionModel> modelsToUpdate = new ArrayList<>();
+
+        for (PlaybackSessionRunner runner : runners) {
+            if (updateRunnerVisibility(runner, scope)) {
+                modelsToUpdate.add(runner.getModel());
+            }
+        }
+
+        if (modelsToUpdate.isEmpty()) return false;
+
+        updatePlaybackModelInDatabase(modelsToUpdate);
         return true;
     }
 
-    public void play(PlaybackSessionRunner playbackSessionRunner) {
-        playbackScheduler.addPlaybackSession(playbackSessionRunner);
-    }
-
-    public void stop(int id) {
-        playbackScheduler.removePlaybackSession(id);
+    private boolean updateRunnerVisibility(PlaybackSessionRunner runner, VisibilityScope scope) {
+        if (scope == runner.getModel().visibilityScope()) return false;
+        runner.modifyVisibility(scope);
+        return true;
     }
 
     public void removeSessionByReplayId(int replayId) {
         PlaybackSessionRunner runner = findSessionByReplayId(replayId);
         if (runner == null) return;
 
-        runner.getAnimator().despawnAll();
-        stop(replayId);
-        sessions.remove(runner.getModel().id());
-    }
-
-    public void startScheduler() {
-        playbackScheduler.runTaskTimer(plugin, 0, 1);
-    }
-
-    public void stopScheduler() {
-        playbackScheduler.cancel();
+        runner.despawn();
+        playbackScheduler.removePlaybackSession(replayId);
+        sessions.remove(runner.getReplayId());
     }
 
     public void updatePlaybackModelInDatabase(PlaybackSessionModel model) {
         playbackRepository.updatePlaybackSession(model);
     }
 
+    public void updatePlaybackModelInDatabase(List<PlaybackSessionModel> model) {
+        playbackRepository.updatePlaybackSession(model);
+    }
+
     public List<String> getUniqueSessionNames() {
         return sessions.values().stream()
-                .map(it -> MUtil.stripe(it.getModel().replay().getUniqueName()))
+                .map(it -> MUtil.stripe(it.getUniqueReplayName()))
                 .toList();
+    }
+
+    public PlaybackStats getPlayerPlaybackStats(UUID ownerUuid) {
+        int totalCount = 0;
+        int privateCount = 0;
+        int globalCount = 0;
+        int activeCount = 0;
+        int inactiveCount = 0;
+
+        for (PlaybackSessionRunner session : sessions.values()) {
+            if (session.getOwnerUUID().equals(ownerUuid)) {
+                totalCount++;
+                if (session.getModel().visibilityScope() == VisibilityScope.PRIVAT) {
+                    privateCount++;
+                } else {
+                    globalCount++;
+                }
+                if (session.isActive()) {
+                    activeCount++;
+                } else {
+                    inactiveCount++;
+                }
+            }
+        }
+        return new PlaybackStats(totalCount, privateCount, globalCount, activeCount, inactiveCount);
     }
 }

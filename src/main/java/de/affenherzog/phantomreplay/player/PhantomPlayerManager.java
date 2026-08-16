@@ -1,17 +1,16 @@
 package de.affenherzog.phantomreplay.player;
 
+import lombok.RequiredArgsConstructor;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class PhantomPlayerManager {
 
     private final Map<UUID, PhantomPlayer> phantomPlayers;
-
-    public PhantomPlayerManager(Map<UUID, PhantomPlayer> phantomPlayers) {
-        this.phantomPlayers = phantomPlayers;
-    }
 
     public Optional<PhantomPlayer> getPhantomPlayer(UUID uuid) {
         return Optional.ofNullable(phantomPlayers.get(uuid));
