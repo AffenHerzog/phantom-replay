@@ -2,19 +2,21 @@ package de.affenherzog.phantomreplay.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import de.affenherzog.phantomreplay.cooldown.CooldownManager;
+import de.affenherzog.phantomreplay.cooldown.PhantomCooldown;
+import de.affenherzog.phantomreplay.cooldown.StartRecordingCooldown;
 import de.affenherzog.phantomreplay.record.RecordingManager;
 import de.affenherzog.phantomreplay.util.MUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 
+@RequiredArgsConstructor
 public class RecordCommand implements PhantomCommand {
 
     private final RecordingManager recordingManager;
-
-    public RecordCommand(RecordingManager recordingManager) {
-        this.recordingManager = recordingManager;
-    }
+    private final CooldownManager cooldownManager;
 
     public LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("record")
@@ -32,11 +34,16 @@ public class RecordCommand implements PhantomCommand {
             return 0;
         }
 
-        if (!recordingManager.startRecording(player.getUniqueId())) {
+        if (recordingManager.isRecording(player.getUniqueId())) {
             player.sendMessage(MUtil.parse("<red>Die Aufnahme läuft bereits!"));
             return 0;
         }
-        player.sendMessage(MUtil.parse("<green>Du hast eine neue Aufnahme gestartet!"));
+
+        PhantomCooldown cooldown = new StartRecordingCooldown(player);
+        cooldownManager.startCooldown(player.getUniqueId(), cooldown, () -> {
+            recordingManager.startRecording(player.getUniqueId());
+            player.sendMessage(MUtil.parse("<green>Du hast eine neue Aufnahme gestartet!"));
+        });
 
         return Command.SINGLE_SUCCESS;
     }

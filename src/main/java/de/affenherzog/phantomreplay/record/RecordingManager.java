@@ -22,7 +22,6 @@ import java.util.UUID;
 public class RecordingManager {
 
     private final Plugin plugin;
-    private final PluginSettings pluginSettings;
     private final PhantomPlayerManager phantomPlayerManager;
     private final ReplayRepository replayRepository;
 
@@ -52,7 +51,7 @@ public class RecordingManager {
 
     private @NotNull Recording createRecording(UUID uuid) {
         Player player = Objects.requireNonNull(Bukkit.getPlayer(uuid));
-        return new Recording(player, pluginSettings.getMaxTicksRecord(), () -> {
+        return new Recording(player, PluginSettings.get().getMaxTicksRecord(), () -> {
             player.sendMessage(MUtil.parse("<red>Maximale Aufnahmezeit erreicht, Aufnahme wird gespeichert!"));
             saveRecording(uuid);
         });

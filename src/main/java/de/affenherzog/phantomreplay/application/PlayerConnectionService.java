@@ -1,5 +1,6 @@
 package de.affenherzog.phantomreplay.application;
 
+import de.affenherzog.phantomreplay.cooldown.CooldownManager;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackRepository;
 import de.affenherzog.phantomreplay.playback.PlaybackSessionRunner;
@@ -32,6 +33,7 @@ public class PlayerConnectionService {
     private final PlaybackManager playbackManager;
     private final RecordingManager recordingManager;
     private final ReplayManagementService replayManagementService;
+    private final CooldownManager cooldownManager;
 
 
     public void loadPlayerData(UUID uuid) {
@@ -68,6 +70,7 @@ public class PlayerConnectionService {
     }
 
     public void logout(UUID uuid) {
+        cooldownManager.cancelCooldown(uuid);
         recordingManager.stopRecording(uuid);
         playbackManager.removeAllSessions(uuid);
         replayManagementService.removeRenaming(uuid);

@@ -5,6 +5,7 @@ import de.affenherzog.phantomreplay.command.GuiReplayCommand;
 import de.affenherzog.phantomreplay.command.PhantomCommand;
 import de.affenherzog.phantomreplay.command.RecordCommand;
 import de.affenherzog.phantomreplay.command.ReplayCommand;
+import de.affenherzog.phantomreplay.cooldown.CooldownManager;
 import de.affenherzog.phantomreplay.database.DatabaseManager;
 import de.affenherzog.phantomreplay.gui.playback.PlaybackGuiService;
 import de.affenherzog.phantomreplay.listener.*;
@@ -28,8 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class PhantomReplay extends JavaPlugin {
 
-    private final PluginSettings pluginSettings = new PluginSettings();
-
     private DatabaseManager databaseManager;
 
     private ReplayRepository replayRepository;
@@ -50,6 +49,8 @@ public final class PhantomReplay extends JavaPlugin {
 
     private PlaybackGuiService playbackGuiService;
 
+    private CooldownManager cooldownManager;
+
     private Logger log;
     private ComponentLogger componentLogger;
 
@@ -59,7 +60,7 @@ public final class PhantomReplay extends JavaPlugin {
         componentLogger = getComponentLogger();
 
         saveDefaultConfig();
-        pluginSettings.load(getConfig());
+        new PluginSettings(getConfig());
 
         if (!setupDatabase()) {
             return;
@@ -70,7 +71,7 @@ public final class PhantomReplay extends JavaPlugin {
 
         phantomPlayerManager = new PhantomPlayerManager(new HashMap<>());
         recordingScheduler = new RecordingScheduler(new ConcurrentHashMap<>());
-        recordingManager = new RecordingManager(this, pluginSettings, phantomPlayerManager, replayRepository, recordingScheduler);
+        recordingManager = new RecordingManager(this, phantomPlayerManager, replayRepository, recordingScheduler);
 
         playbackScheduler = new PlaybackScheduler(new ConcurrentHashMap<>());
         playbackRepository = new PlaybackRepository(databaseManager.getDataSource(), componentLogger);
@@ -80,6 +81,8 @@ public final class PhantomReplay extends JavaPlugin {
         replayManagementService = new ReplayManagementService(phantomPlayerManager, playbackManager, replayRepository);
 
         playbackGuiService = new PlaybackGuiService(this, playbackManager, replayManagementService);
+
+        cooldownManager = new CooldownManager(this);
 
         registerListener();
         registerCommands();
@@ -117,7 +120,7 @@ public final class PhantomReplay extends JavaPlugin {
     }
 
     private void registerListener() {
-        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager, replayManagementService);
+        final PlayerConnectionService playerConnectionService = new PlayerConnectionService(this, playerRepository, replayRepository, playbackRepository, phantomPlayerManager, playbackManager, recordingManager, replayManagementService, cooldownManager);
 
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerJoinListener(playerConnectionService), this);
@@ -130,7 +133,7 @@ public final class PhantomReplay extends JavaPlugin {
 
     private void registerCommands() {
         List<PhantomCommand> commands = List.of(
-                new RecordCommand(recordingManager),
+                new RecordCommand(recordingManager, cooldownManager),
                 new ReplayCommand(playbackManager, phantomPlayerManager, replayManagementService),
                 new GuiReplayCommand(phantomPlayerManager, playbackGuiService)
         );
