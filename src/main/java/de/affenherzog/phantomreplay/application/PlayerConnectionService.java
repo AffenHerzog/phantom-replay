@@ -51,7 +51,12 @@ public class PlayerConnectionService {
 
     private CompletableFuture<List<Replay>> loadReplaysAsync(UUID uuid, PhantomPlayer player) {
         return replayRepository.loadReplays(uuid).thenApply(replays -> {
-            Bukkit.getScheduler().runTask(plugin, () -> player.addReplays(replays));
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (phantomPlayerManager.getPhantomPlayer(uuid).isEmpty()) {
+                    return;
+                }
+                player.addReplays(replays);
+            });
             return replays;
         });
     }
@@ -61,7 +66,7 @@ public class PlayerConnectionService {
 
         return playbackRepository.loadAllPlaybackSessions(replayMap).thenAccept(models ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(p -> {
+                        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(_ -> {
                             List<PlaybackSessionRunner> runners = models.stream()
                                     .map(it -> new PlaybackSessionRunner(it, uuid))
                                     .toList();
@@ -74,8 +79,7 @@ public class PlayerConnectionService {
         recordingManager.stopRecording(uuid);
         playbackManager.removeAllSessions(uuid);
         replayManagementService.removeRenaming(uuid);
-        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(
-                (_ -> phantomPlayerManager.removePhantomPlayer(uuid)));
+        phantomPlayerManager.removePhantomPlayer(uuid);
     }
 
 }
