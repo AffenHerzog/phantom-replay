@@ -1,5 +1,6 @@
 package de.affenherzog.phantomreplay.application;
 
+import de.affenherzog.phantomreplay.cooldown.CooldownManager;
 import de.affenherzog.phantomreplay.playback.PlaybackManager;
 import de.affenherzog.phantomreplay.playback.PlaybackRepository;
 import de.affenherzog.phantomreplay.playback.PlaybackSessionRunner;
@@ -32,6 +33,7 @@ public class PlayerConnectionService {
     private final PlaybackManager playbackManager;
     private final RecordingManager recordingManager;
     private final ReplayManagementService replayManagementService;
+    private final CooldownManager cooldownManager;
 
 
     public void loadPlayerData(UUID uuid) {
@@ -49,7 +51,12 @@ public class PlayerConnectionService {
 
     private CompletableFuture<List<Replay>> loadReplaysAsync(UUID uuid, PhantomPlayer player) {
         return replayRepository.loadReplays(uuid).thenApply(replays -> {
-            Bukkit.getScheduler().runTask(plugin, () -> player.addReplays(replays));
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (phantomPlayerManager.getPhantomPlayer(uuid).isEmpty()) {
+                    return;
+                }
+                player.addReplays(replays);
+            });
             return replays;
         });
     }
@@ -59,7 +66,7 @@ public class PlayerConnectionService {
 
         return playbackRepository.loadAllPlaybackSessions(replayMap).thenAccept(models ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(p -> {
+                        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(_ -> {
                             List<PlaybackSessionRunner> runners = models.stream()
                                     .map(it -> new PlaybackSessionRunner(it, uuid))
                                     .toList();
@@ -68,11 +75,11 @@ public class PlayerConnectionService {
     }
 
     public void logout(UUID uuid) {
+        cooldownManager.cancelCooldown(uuid);
         recordingManager.stopRecording(uuid);
         playbackManager.removeAllSessions(uuid);
         replayManagementService.removeRenaming(uuid);
-        phantomPlayerManager.getPhantomPlayer(uuid).ifPresent(
-                (_ -> phantomPlayerManager.removePhantomPlayer(uuid)));
+        phantomPlayerManager.removePhantomPlayer(uuid);
     }
 
 }
